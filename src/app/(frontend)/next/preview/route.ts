@@ -50,7 +50,8 @@ export async function GET(req: NextRequest): Promise<Response> {
 
   const draft = await draftMode()
 
-  if (!user) {
+  // Only admins may view draft content
+  if (user?.role !== 'admin') {
     draft.disable()
     return new Response('You are not allowed to preview this page', { status: 403 })
   }

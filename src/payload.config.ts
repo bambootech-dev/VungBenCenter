@@ -74,8 +74,8 @@ export default buildConfig({
   jobs: {
     access: {
       run: ({ req }: { req: PayloadRequest }): boolean => {
-        // Allow logged in users to execute this endpoint (default)
-        if (req.user) return true
+        // Allow admins to execute this endpoint
+        if (req.user?.role === 'admin') return true
 
         const secret = process.env.CRON_SECRET
         if (!secret) return false
