@@ -1,5 +1,13 @@
 import { APIError, type CollectionConfig } from 'payload'
 
+import {
+  INVALID_SIGNUP_ROLE_MESSAGE,
+  PUBLIC_SIGNUP_ACCOUNT_STATUS,
+  PUBLIC_SIGNUP_SOURCE,
+  SYSTEM_NOT_INITIALIZED_MESSAGE,
+  isPublicSignupRole,
+} from './registration'
+
 export const Users: CollectionConfig = {
   slug: 'users',
 
@@ -70,10 +78,8 @@ export const Users: CollectionConfig = {
   },
 
   hooks: {
-    // Tài khoản đầu tiên (tạo qua /admin/create-first-user) luôn là Admin,
-    // nếu không sẽ nhận role mặc định 'hocsinh' và bị khóa khỏi Payload CMS
     beforeChange: [
-      async ({ data, operation, req }) => {
+      async ({ collection, data, operation, req }) => {
         if (operation !== 'create') return data
 
         const { totalDocs } = await req.payload.count({
@@ -81,10 +87,37 @@ export const Users: CollectionConfig = {
           req,
         })
 
-        if (totalDocs === 0) {
+        // Đăng ký công khai: dấu hiệu do registerAccount.ts đặt phía server.
+        // Không bao giờ được nâng thành Admin, kể cả khi chưa có User nào.
+        if (req.context?.registrationSource === PUBLIC_SIGNUP_SOURCE) {
+          if (totalDocs === 0) {
+            throw new APIError(SYSTEM_NOT_INITIALIZED_MESSAGE, 403, undefined, true)
+          }
+
+          if (!isPublicSignupRole(data.role)) {
+            throw new APIError(INVALID_SIGNUP_ROLE_MESSAGE, 400, undefined, true)
+          }
+
+          return {
+            ...data,
+            accountStatus: PUBLIC_SIGNUP_ACCOUNT_STATUS[data.role],
+          }
+        }
+
+        // Bootstrap Admin: chỉ luồng /admin/create-first-user của Payload, vốn gửi
+        // POST /api/users/first-register. Payload chuyển tiếp nguyên HTTP request
+        // cho thao tác này (payloadAPI 'REST', pathname lấy từ URL thật) và tự
+        // từ chối khi đã có User. Local API (Server Action, script) luôn có
+        // payloadAPI 'local' nên không bao giờ khớp nhánh này.
+        const firstRegisterPath = `${req.payload.config.routes.api}/${collection.slug}/first-register`
+        const isFirstUserRegistration =
+          req.payloadAPI === 'REST' && req.pathname === firstRegisterPath
+
+        if (totalDocs === 0 && isFirstUserRegistration) {
           return { ...data, role: 'admin', accountStatus: 'active' }
         }
 
+        // Mọi trường hợp khác: không tự động nâng quyền
         return data
       },
     ],

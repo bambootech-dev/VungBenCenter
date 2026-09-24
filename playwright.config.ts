@@ -1,10 +1,10 @@
 import { defineConfig, devices } from '@playwright/test'
 
-/**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
- */
-import 'dotenv/config'
+import { loadLocalTestEnv } from './tests/helpers/localTestDatabase'
+
+// e2e helpers create and delete users, and the dev server inherits this env,
+// so only ever load .env.test pointing at the local test database
+loadLocalTestEnv()
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -35,7 +35,8 @@ export default defineConfig({
   ],
   webServer: {
     command: 'pnpm dev',
-    reuseExistingServer: true,
+    // Never reuse a dev server that may already be connected to another database
+    reuseExistingServer: false,
     url: 'http://localhost:3000',
   },
 })
