@@ -34,7 +34,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm dev',
+    command: 'npm run dev',
     // Never reuse a dev server that may already be connected to another database
     reuseExistingServer: false,
     url: 'http://localhost:3000',

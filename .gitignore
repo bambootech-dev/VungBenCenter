@@ -22,3 +22,6 @@ node_modules/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Local AI assistant tooling (not part of the delivered project)
+.claude/
