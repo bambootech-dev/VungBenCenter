@@ -1,29 +1,20 @@
-import clsx from 'clsx'
+import { cn } from '@/utilities/ui'
 import React from 'react'
 
 interface Props {
   className?: string
-  loading?: 'lazy' | 'eager'
-  priority?: 'auto' | 'high' | 'low'
 }
 
-export const Logo = (props: Props) => {
-  const { loading: loadingFromProps, priority: priorityFromProps, className } = props
-
-  const loading = loadingFromProps || 'lazy'
-  const priority = priorityFromProps || 'low'
-
+export const Logo = ({ className }: Props) => {
   return (
-    /* eslint-disable @next/next/no-img-element */
-    <img
-      alt="Payload Logo"
-      width={193}
-      height={34}
-      loading={loading}
-      fetchPriority={priority}
-      decoding="async"
-      className={clsx('max-w-[9.375rem] w-full h-[34px]', className)}
-      src="https://raw.githubusercontent.com/payloadcms/payload/3.x/packages/ui/src/assets/payload-logo-light.svg"
-    />
+    <span className={cn('inline-flex items-center gap-2 font-semibold tracking-tight', className)}>
+      <span
+        aria-hidden="true"
+        className="flex size-8 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground"
+      >
+        VB
+      </span>
+      <span>Vững Bền Center</span>
+    </span>
   )
 }

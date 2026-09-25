@@ -5,7 +5,7 @@ import { seedTestUser, cleanupTestUser, testUser } from '../helpers/seedUser'
 test.describe('Admin Panel', () => {
   let page: Page
 
-  test.beforeAll(async ({ browser }, testInfo) => {
+  test.beforeAll(async ({ browser }) => {
     await seedTestUser()
 
     const context = await browser.newContext()
@@ -32,10 +32,10 @@ test.describe('Admin Panel', () => {
     await expect(listViewArtifact).toBeVisible()
   })
 
-  test('can navigate to edit view', async () => {
-    await page.goto('http://localhost:3000/admin/collections/pages/create')
-    await expect(page).toHaveURL(/\/admin\/collections\/pages\/[a-zA-Z0-9-_]+/)
-    const editViewArtifact = page.locator('input[name="title"]')
-    await expect(editViewArtifact).toBeVisible()
+  test('can navigate to media list view', async () => {
+    await page.goto('http://localhost:3000/admin/collections/media')
+    await expect(page).toHaveURL('http://localhost:3000/admin/collections/media')
+    const listViewArtifact = page.locator('h1', { hasText: 'Media' }).first()
+    await expect(listViewArtifact).toBeVisible()
   })
 })

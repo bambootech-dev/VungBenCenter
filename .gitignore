@@ -3,6 +3,8 @@ dist / media
 node_modules
 .DS_Store
 .env
+.env.test
+.env*.local
 .next
 next-env.d.ts
 .vercel
@@ -20,3 +22,6 @@ node_modules/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Local AI assistant tooling (not part of the delivered project)
+.claude/

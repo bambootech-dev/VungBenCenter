@@ -7,14 +7,14 @@ const SITE_URL =
 module.exports = {
   siteUrl: SITE_URL,
   generateRobotsTxt: true,
-  exclude: ['/posts-sitemap.xml', '/pages-sitemap.xml', '/*', '/posts/*'],
+  // Account pages, dashboards and the admin panel are not for search engines
+  exclude: ['/login', '/login/*', '/register/*', '/giaovien/*', '/hocsinh/*', '/admin', '/admin/*'],
   robotsTxtOptions: {
     policies: [
       {
         userAgent: '*',
-        disallow: '/admin/*',
+        disallow: ['/admin', '/giaovien', '/hocsinh'],
       },
     ],
-    additionalSitemaps: [`${SITE_URL}/pages-sitemap.xml`, `${SITE_URL}/posts-sitemap.xml`],
   },
 }
