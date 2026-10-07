@@ -13,8 +13,12 @@ export const SiteHeader = () => {
         </Link>
 
         <nav className="flex items-center gap-2">
-          <Button asChild size="sm" variant="ghost">
+          {/* Màn hình nhỏ: logo đã dẫn về trang chủ, ẩn nút này để header không tràn ngang */}
+          <Button asChild className="hidden sm:inline-flex" size="sm" variant="ghost">
             <Link href="/">Trang chủ</Link>
+          </Button>
+          <Button asChild size="sm" variant="ghost">
+            <Link href="/bai-hoc">Bài học</Link>
           </Button>
           <Button asChild size="sm">
             <Link href="/login">Đăng nhập</Link>
