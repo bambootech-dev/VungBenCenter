@@ -359,3 +359,21 @@ describe('Phân quyền và đăng nhập sau đăng ký', () => {
     expect(await countAdmins()).toBe(1)
   })
 })
+
+describe('Học sinh / Phụ huynh', () => {
+  it('dùng chung role hocsinh, không có role phuhuynh', () => {
+    const usersCollection = payload.collections.users.config
+    const roleField = usersCollection.fields.find(
+      (field) => 'name' in field && field.name === 'role',
+    ) as { options: { label: string; value: string }[] }
+
+    expect(roleField.options.map((option) => option.value)).toEqual([
+      'admin',
+      'giaovien',
+      'hocsinh',
+    ])
+    expect(roleField.options.find((option) => option.value === 'hocsinh')?.label).toBe(
+      'Học sinh / Phụ huynh',
+    )
+  })
+})

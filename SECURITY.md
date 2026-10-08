@@ -6,7 +6,7 @@
 |---|---|---|---|
 | `admin` | Chỉ qua `/admin/create-first-user` (Admin đầu tiên) hoặc do Admin tạo | `active` | Có |
 | `giaovien` | Đăng ký công khai `/register/giaovien` | `pending` — Admin phải duyệt | Không |
-| `hocsinh` | Đăng ký công khai `/register/hocsinh` | `active` | Không |
+| `hocsinh` (Học sinh / Phụ huynh) | Đăng ký công khai `/register/hocsinh` | `active` | Không |
 
 ## Khởi tạo Admin đầu tiên
 

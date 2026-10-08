@@ -14,7 +14,7 @@ export const SiteFooter = () => {
             Đăng nhập
           </Link>
           <Link className="hover:text-foreground" href="/register/hocsinh">
-            Đăng ký Học sinh
+            Đăng ký tài khoản người học
           </Link>
           <Link className="hover:text-foreground" href="/register/giaovien">
             Đăng ký Giáo viên

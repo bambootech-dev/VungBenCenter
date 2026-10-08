@@ -65,7 +65,7 @@ export function RoleLogin({
         throw new Error(
           role === 'giaovien'
             ? 'Tài khoản này không phải tài khoản Giáo viên'
-            : 'Tài khoản này không phải tài khoản Học sinh',
+            : 'Tài khoản này không phải tài khoản Học sinh / Phụ huynh',
         )
       }
 

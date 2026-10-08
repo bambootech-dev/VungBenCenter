@@ -12,9 +12,11 @@ Website và hệ thống tài khoản cho trung tâm học Vững Bền.
 |---|---|---|---|
 | Quản trị viên (`admin`) | Tài khoản đầu tiên qua `/admin/create-first-user`, sau đó do Admin tạo | `/admin/login` | Payload Admin `/admin` |
 | Giáo viên (`giaovien`) | `/register/giaovien` — chờ Admin duyệt | `/login/giaovien` | `/giaovien/dashboard` |
-| Học sinh (`hocsinh`) | `/register/hocsinh` — kích hoạt ngay | `/login/hocsinh` | `/hocsinh/dashboard` |
+| Học sinh / Phụ huynh (`hocsinh`) | `/register/hocsinh` — kích hoạt ngay | `/login/hocsinh` | `/hocsinh/dashboard` |
 
 - Trang chủ `/` và trang chọn vai trò `/login`.
+- Trong MVP, Học sinh và Phụ huynh sử dụng chung loại tài khoản người học, được lưu bằng role `hocsinh`.
+  Giao diện ghi "Học sinh / Phụ huynh"; không có role `phuhuynh` hay dashboard Phụ huynh riêng.
 - Admin duyệt Giáo viên bằng cách đổi **Trạng thái tài khoản** thành "Đã kích hoạt" trong `/admin` → Users.
 - Chỉ Admin vào được Payload Admin. Giáo viên / Học sinh chỉ đọc và sửa tài khoản của chính mình, không đổi được vai trò hay trạng thái.
 - Collection trong Payload: **Users**, **Media** (ảnh; ai cũng xem được, chỉ Admin tải lên/sửa/xóa)

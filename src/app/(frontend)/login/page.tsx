@@ -44,14 +44,14 @@ export default function AccountPage() {
             </p>
           </article>
 
-          {/* Học sinh */}
+          {/* Học sinh / Phụ huynh: dùng chung role hocsinh */}
           <article style={styles.card}>
             <div style={styles.icon}>HS</div>
 
-            <h2 style={styles.cardTitle}>Học sinh</h2>
+            <h2 style={styles.cardTitle}>Học sinh / Phụ huynh</h2>
 
             <p style={styles.cardDescription}>
-              Truy cập khu vực học tập dành cho Học sinh.
+              Truy cập khu vực học tập dành cho Học sinh và Phụ huynh.
             </p>
 
             <div style={styles.actions}>
@@ -59,19 +59,19 @@ export default function AccountPage() {
                 href="/login/hocsinh"
                 style={styles.primaryButton}
               >
-                Đăng nhập Học sinh
+                Đăng nhập Học sinh / Phụ huynh
               </Link>
 
               <Link
                 href="/register/hocsinh"
                 style={styles.secondaryButton}
               >
-                Đăng ký Học sinh
+                Đăng ký tài khoản người học
               </Link>
             </div>
 
             <p style={styles.note}>
-              Học sinh có thể đăng nhập ngay sau khi đăng ký.
+              Học sinh / Phụ huynh có thể đăng nhập ngay sau khi đăng ký.
             </p>
           </article>
         </div>

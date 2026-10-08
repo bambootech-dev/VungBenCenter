@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 
 const roles = [
   {
-    title: 'Học sinh',
+    title: 'Học sinh / Phụ huynh',
     description: 'Đăng ký và đăng nhập ngay để vào khu vực học tập.',
     register: '/register/hocsinh',
     login: '/login/hocsinh',
@@ -27,7 +27,7 @@ export default function HomePage() {
         </p>
         <h1 className="mb-4 text-4xl font-semibold tracking-tight md:text-5xl">Vững Bền Center</h1>
         <p className="mb-8 text-lg text-muted-foreground">
-          Nền tảng dành cho Học sinh và Giáo viên của trung tâm.
+          Nền tảng dành cho Học sinh / Phụ huynh và Giáo viên của trung tâm.
         </p>
         <Button asChild size="lg">
           <Link href="/login">Đăng nhập</Link>

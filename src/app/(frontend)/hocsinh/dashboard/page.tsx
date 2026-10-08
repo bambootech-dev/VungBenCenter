@@ -26,7 +26,7 @@ export default async function HocSinhDashboardPage() {
 
   return (
     <main style={{ padding: '32px' }}>
-      <h1>Trang Học sinh</h1>
+      <h1>Trang Học sinh / Phụ huynh</h1>
 
       <p>
         Xin chào {user.name || user.email}
