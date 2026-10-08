@@ -27,18 +27,52 @@ Chi tiết bảo mật và quy trình tạo Admin đầu tiên: xem [SECURITY.md
 
 ## Cài đặt
 
-Yêu cầu: Node.js ≥ 20.9, npm, một database PostgreSQL.
+Yêu cầu: Node.js ≥ 20.9, npm, Docker (PostgreSQL local).
 
 ```bash
 npm ci
-cp .env.example .env   # điền DATABASE_URL, PAYLOAD_SECRET, NEXT_PUBLIC_SERVER_URL
-npm run dev            # http://localhost:3000
+
+# Một container Postgres local chứa cả database dev và test
+docker run -d --name vbc-test-db -e POSTGRES_USER=vbc -e POSTGRES_PASSWORD=<mật-khẩu-local> \
+  -e POSTGRES_DB=vbc_test -p 127.0.0.1:54329:5432 postgres:16-alpine
+docker exec vbc-test-db psql -U vbc -d postgres -c "CREATE DATABASE vbc_dev"
+
+cp .env.example .env.development.local     # dev: vbc_dev
+cp .env.test.example .env.test             # test: vbc_test
+npm run db:check                           # [dev-db] host=127.0.0.1 port=54329 database=vbc_dev
+npm run dev                                # http://localhost:3000
 ```
 
-Lần đầu chạy với database trống: mở `/admin` để tạo Admin đầu tiên **trước khi** đưa website lên Internet (xem SECURITY.md).
+Lần đầu chạy với database trống: mở `/admin` để tạo Admin đầu tiên.
 
-> `npm run dev` tự đồng bộ schema vào database đang cấu hình (chế độ push của Payload).
-> Không chạy dev với `DATABASE_URL` của production.
+## Database: dev, test, production
+
+| Môi trường | Database | Nguồn cấu hình |
+|---|---|---|
+| Development (`next dev`, Payload CLI) | `127.0.0.1:54329/vbc_dev` | `.env.development.local` |
+| Integration / E2E (Vitest, Playwright) | `127.0.0.1:54329/vbc_test` | `.env.test` |
+| Build production trên máy | Postgres local (`vbc_dev`) | `.env.production.local` |
+| Production (Supabase) | Supabase | **Chỉ** biến môi trường của nơi deploy |
+
+Các file trên đều bị git-ignore và `.dockerignore`. `npm run dev` tự đồng bộ schema (chế độ push của
+Payload) vào database đang cấu hình, nên dev và test không bao giờ được trỏ tới Supabase.
+
+**Guard bắt buộc.** `src/payload.config.ts` gọi `assertSafeDatabase()` trước khi tạo `postgresAdapter`,
+nên mọi đường chạy (`next dev`, `npx next dev`, `next build`, Payload CLI, migration, Vitest, Playwright)
+đều dừng trước khi kết nối nếu `DATABASE_URL` không hợp lệ:
+
+- Development chỉ nhận `vbc_dev`, test chỉ nhận `vbc_test`, trên `localhost` / `127.0.0.1` / `::1`.
+  `ALLOW_REMOTE_DATABASE` bị bỏ qua ở hai môi trường này.
+- Production (`NODE_ENV=production`) nhận database local, hoặc database remote khi có
+  `ALLOW_REMOTE_DATABASE=true`.
+- URL thiếu, sai định dạng hoặc có query ghi đè host/database (`?host=`, `?dbname=`…) đều bị chặn.
+- Thông báo lỗi chỉ ghi host, port, tên database — không bao giờ có username, password hay connection string.
+
+`npm run db:check` / `npm run db:check:test` in database mà dev / test sẽ dùng (không kết nối).
+`test:int` và `test:e2e` tự chạy `db:check:test` trước.
+
+**Không đặt `ALLOW_REMOTE_DATABASE=true`** trong `.env`, `.env.local`, `.env.development.local`,
+`.env.test` hay bất kỳ file nào được commit — chỉ cấu hình trong môi trường deploy production.
 
 ## Lệnh thường dùng
 
@@ -80,10 +114,12 @@ tests/
 
 Chưa triển khai. Những việc cần làm trước khi deploy:
 
-1. **Biến môi trường**: `DATABASE_URL` (với Supabase nên dùng connection pooler), `PAYLOAD_SECRET`, `NEXT_PUBLIC_SERVER_URL`.
+1. **Biến môi trường** (chỉ trên nền tảng deploy, cho cả bước build và lúc chạy): `DATABASE_URL` (với Supabase
+   nên dùng connection pooler), `ALLOW_REMOTE_DATABASE=true`, `PAYLOAD_SECRET`, `NEXT_PUBLIC_SERVER_URL`.
 2. **Lưu trữ ảnh**: Media hiện lưu vào `public/media` trên ổ đĩa, không tồn tại lâu dài trên Vercel.
    Cần thêm storage adapter (ví dụ `@payloadcms/storage-vercel-blob` hoặc `@payloadcms/storage-s3` với Supabase Storage).
-3. **Migration**: production không tự đồng bộ schema. Xem mục "Migration" bên dưới.
+3. **Migration**: production không tự đồng bộ schema và ứng dụng không tự chạy migration khi khởi động
+   (không dùng `prodMigrations`). Migration chỉ chạy thủ công theo mục "Migration" bên dưới.
 4. **Admin đầu tiên**: tạo ở môi trường riêng tư trước khi mở website công khai.
 
 ## Migration
@@ -96,18 +132,20 @@ Migration nằm trong `src/migrations/`:
 | `20261007_163617_lessons` | Chỉ tạo bảng `lessons` và cột `payload_locked_documents_rels.lessons_id` |
 
 **Không chạy baseline trên database đã có bảng** (ví dụ database production từng được đồng bộ bằng
-`npm run dev`): `CREATE TABLE` sẽ lỗi. Với database như vậy, người có quyền production làm theo thứ tự:
+`npm run dev`): `CREATE TABLE` sẽ lỗi. Với database như vậy, người có quyền production làm theo thứ tự,
+trong môi trường production (Payload CLI cần `NODE_ENV=production ALLOW_REMOTE_DATABASE=true` và
+`DATABASE_URL` của production, không lấy từ file env trên máy dev):
 
 1. Sao lưu database.
 2. Đối chiếu schema hiện tại với baseline (các bảng/cột trong `20261007_163610_baseline.ts`).
 3. Đánh dấu baseline là đã chạy, **không** thực thi nó:
    `INSERT INTO payload_migrations (name, batch, updated_at, created_at) VALUES ('20261007_163610_baseline', 1, now(), now());`
-4. Chạy `npx payload migrate:status`: baseline phải là `Ran: Yes`, chỉ `20261007_163617_lessons` là `No`.
-5. Chạy `npx payload migrate`. Nếu database từng chạy ở chế độ dev (push), Payload hỏi
+4. Chạy `NODE_ENV=production ALLOW_REMOTE_DATABASE=true npx payload migrate:status`: baseline phải là `Ran: Yes`, chỉ `20261007_163617_lessons` là `No`.
+5. Chỉ sau đó mới chạy migration Lessons: `NODE_ENV=production ALLOW_REMOTE_DATABASE=true npx payload migrate`. Nếu database từng chạy ở chế độ dev (push), Payload hỏi
    "It looks like you've run Payload in dev mode… Would you like to proceed?". Chỉ trả lời `y` khi bước 2
    và 4 đã đúng: Payload bỏ qua bản ghi `dev` và chỉ chạy các migration chưa chạy (ở đây là `lessons`).
 
 Database trống (ví dụ database test local mới tạo) thì chạy `npx payload migrate` bình thường.
-Sau khi đổi collection: `npx payload migrate:create <tên>` trên database local, không bao giờ trên production.
+Sau khi đổi collection: `npx payload migrate:create <tên>` trên database local (`vbc_dev`), không bao giờ trên production.
 
 `Dockerfile` chỉ dùng khi không deploy lên Vercel; khi đó cần bật `output: 'standalone'` trong `next.config.ts`.

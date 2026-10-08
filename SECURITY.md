@@ -55,7 +55,7 @@ cầu; giá trị trong database không thay đổi.
 Integration test xóa bảng `users`, nên chỉ được chạy trên database test local.
 
 ```bash
-# Postgres local dùng riêng cho test
+# Postgres local (cùng container chứa vbc_dev cho development)
 docker run -d --name vbc-test-db -e POSTGRES_USER=vbc -e POSTGRES_PASSWORD=vbc_test_only \
   -e POSTGRES_DB=vbc_test -p 127.0.0.1:54329:5432 postgres:16-alpine
 
@@ -63,8 +63,11 @@ cp .env.test.example .env.test
 npm run test:int
 ```
 
-- `vitest.setup.ts` chỉ đọc `.env.test` và dừng nếu `DATABASE_URL` không phải
-  `127.0.0.1`/`localhost`, cổng `54329`, database `vbc_test`. Vite không đọc `.env`.
+- `src/utilities/assertSafeDatabase.ts` chạy trong `payload.config.ts` trước khi tạo `postgresAdapter`:
+  test chỉ nhận `vbc_test`, development chỉ nhận `vbc_dev`, đều trên localhost. Xem README, mục
+  "Database: dev, test, production".
+- `vitest.setup.ts` và `playwright.config.ts` chỉ đọc `.env.test`, kiểm tra thêm cổng `54329`, rồi đánh dấu
+  `VBC_DATABASE_ENV=test` để `next dev` do Playwright khởi động cũng chỉ nhận `vbc_test`. Vite không đọc `.env`.
 - `scripts/with-local-test-db.ts <lệnh>` chạy lệnh bất kỳ (generate, build, dev) với
-  database local, và từ chối chạy nếu thư mục có `.env` — Next.js và Payload CLI tự
-  nạp file đó. Dùng trong một bản sao dự án không có `.env`.
+  database test, và từ chối chạy nếu thư mục có `.env` hoặc `.env.*.local` — Next.js và Payload CLI tự
+  nạp các file đó. Dùng trong một bản sao dự án không có các file này.

@@ -7,10 +7,14 @@ import { fileURLToPath } from 'url'
 import { Lessons } from './collections/Lessons'
 import { Media } from './collections/Media'
 import { Users } from './collections/Users'
+import { assertSafeDatabase } from './utilities/assertSafeDatabase'
 import { getServerSideURL } from './utilities/getURL'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
+
+// Throws before postgresAdapter is created if DATABASE_URL is not allowed here
+const { url: databaseURL } = assertSafeDatabase(process.env.DATABASE_URL)
 
 export default buildConfig({
   admin: {
@@ -21,7 +25,7 @@ export default buildConfig({
   },
   db: postgresAdapter({
     pool: {
-      connectionString: process.env.DATABASE_URL || '',
+      connectionString: databaseURL,
     },
     migrationDir: path.resolve(dirname, 'migrations'),
   }),
