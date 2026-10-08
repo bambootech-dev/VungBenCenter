@@ -109,6 +109,16 @@
   --success: oklch(78% 0.08 200deg);
   --warning: oklch(89% 0.1 75deg);
   --error: oklch(75% 0.15 25deg);
+
+  /* Trang bài học (/bai-hoc): xanh lá + xanh bạc hà. Chữ trắng trên --lesson-primary ≥ 4.5:1 */
+  --lesson-page: #eefaf3;
+  --lesson-primary: #15803d;
+  --lesson-primary-dark: #14532d;
+  --lesson-primary-soft: #d8f3e3;
+  --lesson-accent: #fde68a;
+  --lesson-surface: #ffffff;
+  --lesson-border: #c6ebd5;
+  --lesson-muted: #4d6b5d;
 }
 
 @theme inline {
@@ -151,6 +161,14 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-error: var(--error);
+  --color-lesson-page: var(--lesson-page);
+  --color-lesson-primary: var(--lesson-primary);
+  --color-lesson-primary-dark: var(--lesson-primary-dark);
+  --color-lesson-primary-soft: var(--lesson-primary-soft);
+  --color-lesson-accent: var(--lesson-accent);
+  --color-lesson-surface: var(--lesson-surface);
+  --color-lesson-border: var(--lesson-border);
+  --color-lesson-muted: var(--lesson-muted);
 }
 
 @layer base {
@@ -159,5 +177,145 @@
   }
   body {
     @apply bg-background text-foreground min-h-[100vh] flex flex-col;
+  }
+}
+
+/* Nền trang bài học: bạc hà nhạt với vài vệt sáng (chỉ CSS, không dùng ảnh) */
+.lesson-page {
+  background-color: var(--lesson-page);
+  background-image:
+    radial-gradient(circle at 8% 0%, rgb(253 230 138 / 35%) 0, transparent 22rem),
+    radial-gradient(circle at 100% 18%, rgb(187 247 208 / 70%) 0, transparent 26rem),
+    radial-gradient(ellipse at 50% 120%, rgb(187 247 208 / 80%) 0, transparent 60%);
+}
+
+.lesson-container {
+  width: 100%;
+  max-width: 75rem;
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+
+@media (width >= 48rem) {
+  .lesson-container {
+    padding-inline: 2rem;
+  }
+}
+
+/* Rich Text của từng bước: chữ lớn, dễ đọc cho trẻ nhỏ */
+.lesson-prose {
+  color: var(--lesson-primary-dark);
+  font-size: 1.25rem;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.lesson-prose > * + * {
+  margin-top: 1rem;
+}
+
+.lesson-prose h1,
+.lesson-prose h2,
+.lesson-prose h3,
+.lesson-prose h4 {
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.lesson-prose h1 {
+  font-size: 2.25rem;
+}
+
+.lesson-prose h2 {
+  font-size: 1.875rem;
+}
+
+.lesson-prose h3 {
+  font-size: 1.5rem;
+}
+
+.lesson-prose h4 {
+  font-size: 1.25rem;
+}
+
+.lesson-prose ul,
+.lesson-prose ol {
+  padding-left: 1.75rem;
+}
+
+.lesson-prose ul {
+  list-style: disc;
+}
+
+.lesson-prose ol {
+  list-style: decimal;
+}
+
+.lesson-prose li + li {
+  margin-top: 0.375rem;
+}
+
+.lesson-prose li::marker {
+  color: var(--lesson-primary);
+  font-weight: 700;
+}
+
+.lesson-prose a {
+  color: var(--lesson-primary);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.lesson-prose a:focus-visible {
+  outline: 3px solid var(--lesson-primary-dark);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.lesson-prose strong {
+  font-weight: 800;
+}
+
+.lesson-prose em {
+  font-style: italic;
+}
+
+.lesson-prose blockquote {
+  border-left: 4px solid var(--lesson-border);
+  padding-left: 1rem;
+  color: var(--lesson-muted);
+}
+
+.lesson-prose img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 1rem;
+}
+
+@media (width < 48rem) {
+  .lesson-prose {
+    font-size: 1.125rem;
+  }
+
+  .lesson-prose h1 {
+    font-size: 1.875rem;
+  }
+
+  .lesson-prose h2 {
+    font-size: 1.5rem;
+  }
+
+  .lesson-prose h3 {
+    font-size: 1.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lesson-page *,
+  .lesson-page *::before,
+  .lesson-page *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
   }
 }
