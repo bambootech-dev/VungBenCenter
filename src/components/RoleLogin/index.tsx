@@ -3,6 +3,16 @@
 import { useRouter } from 'next/navigation'
 import { FormEvent, useState } from 'react'
 
+import {
+  cardClass,
+  errorAlertClass,
+  inputClass,
+  labelClass,
+  pageTitleClass,
+  pillClass,
+  primaryButtonClass,
+} from '@/components/ui/brand'
+
 type LoginRole = 'giaovien' | 'hocsinh'
 
 type RoleLoginProps = {
@@ -83,77 +93,52 @@ export function RoleLogin({
   }
 
   return (
-    <main
-      style={{
-        alignItems: 'center',
-        display: 'flex',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        padding: '24px',
-      }}
-    >
-      <form
-        onSubmit={handleSubmit}
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '16px',
-          maxWidth: '420px',
-          width: '100%',
-        }}
-      >
-        <h1>{title}</h1>
+    <main className="flex flex-1 items-center justify-center px-4 py-12 md:py-20">
+      <form className={`${cardClass} w-full max-w-md p-6 sm:p-8`} onSubmit={handleSubmit}>
+        <p className={`${pillClass} mb-3`}>Vững Bền Center</p>
+        <h1 className={`${pageTitleClass} mb-6`}>{title}</h1>
 
-        <label>
-          Email
-          <input
-            autoComplete="email"
-            onChange={(event) => setEmail(event.target.value)}
-            required
-            type="email"
-            value={email}
-            style={{
-              display: 'block',
-              marginTop: '8px',
-              padding: '12px',
-              width: '100%',
-            }}
-          />
-        </label>
+        <div className="space-y-5">
+          <div>
+            <label className={labelClass} htmlFor={`${role}-login-email`}>
+              Email
+            </label>
+            <input
+              autoComplete="email"
+              className={inputClass}
+              id={`${role}-login-email`}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+              type="email"
+              value={email}
+            />
+          </div>
 
-        <label>
-          Mật khẩu
-          <input
-            autoComplete="current-password"
-            onChange={(event) => setPassword(event.target.value)}
-            required
-            type="password"
-            value={password}
-            style={{
-              display: 'block',
-              marginTop: '8px',
-              padding: '12px',
-              width: '100%',
-            }}
-          />
-        </label>
+          <div>
+            <label className={labelClass} htmlFor={`${role}-login-password`}>
+              Mật khẩu
+            </label>
+            <input
+              autoComplete="current-password"
+              className={inputClass}
+              id={`${role}-login-password`}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+              type="password"
+              value={password}
+            />
+          </div>
 
-        {error && (
-          <p style={{ color: 'red' }}>
-            {error}
-          </p>
-        )}
+          {error && (
+            <p className={errorAlertClass} role="alert">
+              {error}
+            </p>
+          )}
 
-        <button
-          disabled={loading}
-          type="submit"
-          style={{
-            cursor: loading ? 'not-allowed' : 'pointer',
-            padding: '12px',
-          }}
-        >
-          {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
-        </button>
+          <button className={`${primaryButtonClass} w-full`} disabled={loading} type="submit">
+            {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+          </button>
+        </div>
       </form>
     </main>
   )

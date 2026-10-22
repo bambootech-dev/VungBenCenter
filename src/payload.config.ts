@@ -23,6 +23,8 @@ export default buildConfig({
     importMap: {
       baseDir: path.resolve(dirname),
     },
+    // Cố định theme sáng để /admin cùng phong cách nền sáng, nút xanh lá với frontend (custom.scss)
+    theme: 'light',
     user: Users.slug,
   },
   db: postgresAdapter({

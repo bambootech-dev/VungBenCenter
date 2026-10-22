@@ -3,6 +3,8 @@ import { headers as getHeaders } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { cardClass, pageTitleClass, pillClass } from '@/components/ui/brand'
+
 export default async function GiaoVienDashboardPage() {
   const payload = await getPayload({ config })
   const headers = await getHeaders()
@@ -25,12 +27,15 @@ export default async function GiaoVienDashboardPage() {
   }
 
   return (
-    <main style={{ padding: '32px' }}>
-      <h1>Trang Giáo viên</h1>
+    <main className="flex-1">
+      <div className="lesson-container py-10 md:py-14">
+        <p className={`${pillClass} mb-3`}>Vững Bền Center</p>
+        <h1 className={`${pageTitleClass} mb-6`}>Trang Giáo viên</h1>
 
-      <p>
-        Xin chào {user.name || user.email}
-      </p>
+        <p className={`${cardClass} p-6 text-lg font-bold text-lesson-primary-dark`}>
+          Xin chào {user.name || user.email}
+        </p>
+      </div>
     </main>
   )
 }

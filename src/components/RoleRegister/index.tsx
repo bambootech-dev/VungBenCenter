@@ -4,6 +4,17 @@ import Link from 'next/link'
 import { FormEvent, useState } from 'react'
 
 import { registerAccount } from '@/actions/registerAccount'
+import {
+  cardClass,
+  errorAlertClass,
+  inputClass,
+  labelClass,
+  linkClass,
+  pageTitleClass,
+  pillClass,
+  primaryButtonClass,
+  successAlertClass,
+} from '@/components/ui/brand'
 
 type Props = {
   role: 'giaovien' | 'hocsinh'
@@ -63,94 +74,97 @@ export function RoleRegister({
   }
 
   return (
-    <main>
-      <form onSubmit={handleSubmit}>
-        <h1>{title}</h1>
+    <main className="flex flex-1 items-center justify-center px-4 py-12 md:py-20">
+      <form className={`${cardClass} w-full max-w-md p-6 sm:p-8`} onSubmit={handleSubmit}>
+        <p className={`${pillClass} mb-3`}>Vững Bền Center</p>
+        <h1 className={`${pageTitleClass} mb-6`}>{title}</h1>
 
-        <div>
-          <label htmlFor={`${role}-name`}>
-            Họ và tên
-          </label>
+        <div className="space-y-5">
+          <div>
+            <label className={labelClass} htmlFor={`${role}-name`}>
+              Họ và tên
+            </label>
+            <input
+              autoComplete="name"
+              className={inputClass}
+              disabled={loading}
+              id={`${role}-name`}
+              name="name"
+              required
+              type="text"
+            />
+          </div>
 
-          <input
-            autoComplete="name"
-            disabled={loading}
-            id={`${role}-name`}
-            name="name"
-            required
-            type="text"
-          />
-        </div>
+          <div>
+            <label className={labelClass} htmlFor={`${role}-email`}>
+              Email
+            </label>
+            <input
+              autoComplete="email"
+              className={inputClass}
+              disabled={loading}
+              id={`${role}-email`}
+              name="email"
+              required
+              type="email"
+            />
+          </div>
 
-        <div>
-          <label htmlFor={`${role}-email`}>
-            Email
-          </label>
+          <div>
+            <label className={labelClass} htmlFor={`${role}-password`}>
+              Mật khẩu
+            </label>
+            <input
+              autoComplete="new-password"
+              className={inputClass}
+              disabled={loading}
+              id={`${role}-password`}
+              minLength={8}
+              name="password"
+              required
+              type="password"
+            />
+          </div>
 
-          <input
-            autoComplete="email"
-            disabled={loading}
-            id={`${role}-email`}
-            name="email"
-            required
-            type="email"
-          />
-        </div>
+          <div>
+            <label className={labelClass} htmlFor={`${role}-confirm-password`}>
+              Nhập lại mật khẩu
+            </label>
+            <input
+              autoComplete="new-password"
+              className={inputClass}
+              disabled={loading}
+              id={`${role}-confirm-password`}
+              minLength={8}
+              name="confirmPassword"
+              required
+              type="password"
+            />
+          </div>
 
-        <div>
-          <label htmlFor={`${role}-password`}>
-            Mật khẩu
-          </label>
+          {error && (
+            <p className={errorAlertClass} role="alert">
+              {error}
+            </p>
+          )}
 
-          <input
-            autoComplete="new-password"
-            disabled={loading}
-            id={`${role}-password`}
-            minLength={8}
-            name="password"
-            required
-            type="password"
-          />
-        </div>
+          {message && (
+            <p className={successAlertClass} role="status">
+              {message}
+            </p>
+          )}
 
-        <div>
-          <label htmlFor={`${role}-confirm-password`}>
-            Nhập lại mật khẩu
-          </label>
+          <button className={`${primaryButtonClass} w-full`} disabled={loading} type="submit">
+            {loading ? 'Đang tạo tài khoản...' : 'Đăng ký'}
+          </button>
 
-          <input
-            autoComplete="new-password"
-            disabled={loading}
-            id={`${role}-confirm-password`}
-            minLength={8}
-            name="confirmPassword"
-            required
-            type="password"
-          />
-        </div>
-
-        {error && (
-          <p role="alert" style={{ color: 'red' }}>
-            {error}
+          <p className="text-center font-semibold text-muted-foreground">
+            Đã có tài khoản?{' '}
+            <Link className={linkClass} href={loginTo}>
+              Đăng nhập
+            </Link>
           </p>
-        )}
-
-        {message && (
-          <p role="status" style={{ color: 'green' }}>
-            {message}
-          </p>
-        )}
-
-        <button disabled={loading} type="submit">
-          {loading
-            ? 'Đang tạo tài khoản...'
-            : 'Đăng ký'}
-        </button>
-
-        <p>
-          Đã có tài khoản?{' '}
-          <Link href={loginTo}>Đăng nhập</Link>
-        </p>
+        </div>
       </form>
     </main>
   )
