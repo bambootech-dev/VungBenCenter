@@ -70,6 +70,8 @@ export interface Config {
     users: User;
     media: Media;
     lessons: Lesson;
+    worksheets: Worksheet;
+    'worksheet-submissions': WorksheetSubmission;
     'payload-kv': PayloadKv;
     'payload-folders': FolderInterface;
     'payload-locked-documents': PayloadLockedDocument;
@@ -85,6 +87,8 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     lessons: LessonsSelect<false> | LessonsSelect<true>;
+    worksheets: WorksheetsSelect<false> | WorksheetsSelect<true>;
+    'worksheet-submissions': WorksheetSubmissionsSelect<false> | WorksheetSubmissionsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-folders': PayloadFoldersSelect<false> | PayloadFoldersSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -427,6 +431,76 @@ export interface Lesson {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "worksheets".
+ */
+export interface Worksheet {
+  id: number;
+  title: string;
+  instructions?: string | null;
+  /**
+   * Không bắt buộc. Chọn nếu worksheet dùng cho một bài học cụ thể.
+   */
+  lesson?: (number | null) | Lesson;
+  /**
+   * Mỗi câu hỏi là một ô nhập văn bản.
+   */
+  questions: {
+    /**
+     * Định danh cố định, duy nhất trong worksheet, ví dụ: muc-tieu. Không nên đổi sau khi đã có bài nộp.
+     */
+    key: string;
+    label: string;
+    required?: boolean | null;
+    id?: string | null;
+  }[];
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Bài Giáo viên đã nộp. Chỉ xem, không sửa hoặc xóa được.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "worksheet-submissions".
+ */
+export interface WorksheetSubmission {
+  id: number;
+  worksheet: number | Worksheet;
+  /**
+   * Lấy từ phiên đăng nhập.
+   */
+  teacher: number | User;
+  /**
+   * Do server đặt khi nộp.
+   */
+  submittedAt: string;
+  /**
+   * Server sao chép từ worksheet gốc khi nộp.
+   */
+  worksheetSnapshot: {
+    title: string;
+    instructions?: string | null;
+    questions: {
+      key: string;
+      label: string;
+      required?: boolean | null;
+      id?: string | null;
+    }[];
+  };
+  /**
+   * Chỉ lưu câu đã trả lời; câu không bắt buộc bỏ trống sẽ không có dòng.
+   */
+  answers?:
+    | {
+        questionKey: string;
+        value: string;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -460,6 +534,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'lessons';
         value: number | Lesson;
+      } | null)
+    | ({
+        relationTo: 'worksheets';
+        value: number | Worksheet;
+      } | null)
+    | ({
+        relationTo: 'worksheet-submissions';
+        value: number | WorksheetSubmission;
       } | null)
     | ({
         relationTo: 'payload-folders';
@@ -647,6 +729,57 @@ export interface LessonsSelect<T extends boolean = true> {
         step7?: T;
         step8?: T;
         step9?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "worksheets_select".
+ */
+export interface WorksheetsSelect<T extends boolean = true> {
+  title?: T;
+  instructions?: T;
+  lesson?: T;
+  questions?:
+    | T
+    | {
+        key?: T;
+        label?: T;
+        required?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "worksheet-submissions_select".
+ */
+export interface WorksheetSubmissionsSelect<T extends boolean = true> {
+  worksheet?: T;
+  teacher?: T;
+  submittedAt?: T;
+  worksheetSnapshot?:
+    | T
+    | {
+        title?: T;
+        instructions?: T;
+        questions?:
+          | T
+          | {
+              key?: T;
+              label?: T;
+              required?: T;
+              id?: T;
+            };
+      };
+  answers?:
+    | T
+    | {
+        questionKey?: T;
+        value?: T;
+        id?: T;
       };
   updatedAt?: T;
   createdAt?: T;

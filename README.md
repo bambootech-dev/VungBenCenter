@@ -19,11 +19,18 @@ Website và hệ thống tài khoản cho trung tâm học Vững Bền.
   Giao diện ghi "Học sinh / Phụ huynh"; không có role `phuhuynh` hay dashboard Phụ huynh riêng.
 - Admin duyệt Giáo viên bằng cách đổi **Trạng thái tài khoản** thành "Đã kích hoạt" trong `/admin` → Users.
 - Chỉ Admin vào được Payload Admin. Giáo viên / Học sinh chỉ đọc và sửa tài khoản của chính mình, không đổi được vai trò hay trạng thái.
-- Collection trong Payload: **Users**, **Media** (ảnh; ai cũng xem được, chỉ Admin tải lên/sửa/xóa)
-  và **Lessons** (bài học âm).
+- Collection trong Payload: **Users**, **Media** (ảnh; ai cũng xem được, chỉ Admin tải lên/sửa/xóa),
+  **Lessons** (bài học âm), **Worksheets** (worksheet cho Giáo viên) và **Worksheet Submissions** (bài nộp).
 - Bài học: `/bai-hoc` (danh sách theo `order`) và `/bai-hoc/[id]?step=1..9` (đúng 9 bước, mỗi bước là
   một Rich Text). Chỉ tài khoản đã đăng nhập và đang **active** đọc được (giao diện, REST, GraphQL);
   chỉ Admin thêm/sửa/xóa. Trường `sound` chỉ lưu tên âm ("Th"), giao diện tự hiển thị "Âm Th".
+- Worksheet: tiêu đề, hướng dẫn, liên kết bài học (không bắt buộc) và danh sách câu hỏi văn bản
+  (`key` duy nhất trong worksheet, `label`, `required`). Chỉ Admin và Giáo viên **active** đọc được;
+  chỉ Admin thêm/sửa/xóa (qua `/admin`). Không xóa được worksheet đã có bài nộp.
+- Bài nộp (`worksheet-submissions`): chỉ Giáo viên **active** tạo được, qua `POST /api/worksheet-submissions`
+  với `worksheet` và `answers` (`questionKey`, `value`). Server tự gán giáo viên, thời gian nộp và bản chụp đề
+  từ worksheet gốc. Giáo viên chỉ đọc bài của mình, Admin đọc tất cả; không ai sửa/xóa được.
+  Chưa có giao diện điền và xem bài nộp.
 
 Chi tiết bảo mật và quy trình tạo Admin đầu tiên: xem [SECURITY.md](./SECURITY.md).
 
@@ -98,10 +105,12 @@ chặn kết nối nhầm: xem mục "Kiểm thử với database local" trong [
 
 ```
 src/
-  payload.config.ts        Cấu hình Payload (Users, Media, Postgres)
+  payload.config.ts        Cấu hình Payload (Users, Media, Lessons, Worksheets, WorksheetSubmissions, Postgres)
   collections/Users/       Vai trò, trạng thái, phân quyền, hook khởi tạo Admin
   collections/Media.ts     Ảnh tải lên
   collections/Lessons/     Bài học âm: 9 bước Rich Text cố định, phân quyền đọc theo accountStatus
+  collections/Worksheets/  Worksheet: câu hỏi văn bản, kiểm tra mã câu hỏi, Giáo viên active chỉ đọc
+  collections/WorksheetSubmissions/  Bài nộp: câu trả lời theo mã câu hỏi, bản chụp đề, không sửa/xóa
   migrations/              Migration Postgres (xem mục "Migration")
   actions/registerAccount.ts  Server Action đăng ký công khai
   app/(frontend)/          Trang chủ, đăng nhập, đăng ký, dashboard, bài học (/bai-hoc)
@@ -132,6 +141,8 @@ Migration nằm trong `src/migrations/`:
 |---|---|
 | `20261007_163610_baseline` | Schema đã có trước iteration Bài học (users, media, folders, preferences, …) |
 | `20261007_163617_lessons` | Chỉ tạo bảng `lessons` và cột `payload_locked_documents_rels.lessons_id` |
+| `20261021_174608_worksheets` | Chỉ tạo bảng `worksheets`, `worksheets_questions` và cột `payload_locked_documents_rels.worksheets_id` |
+| `20261021_180934_worksheet_submissions` | Chỉ tạo bảng `worksheet_submissions`, `worksheet_submissions_answers`, `worksheet_submissions_snapshot_questions` và cột `payload_locked_documents_rels.worksheet_submissions_id` |
 
 **Không chạy baseline trên database đã có bảng** (ví dụ database production từng được đồng bộ bằng
 `npm run dev`): `CREATE TABLE` sẽ lỗi. Với database như vậy, người có quyền production làm theo thứ tự,
