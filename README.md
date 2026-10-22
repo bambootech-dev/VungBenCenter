@@ -30,7 +30,9 @@ Website và hệ thống tài khoản cho trung tâm học Vững Bền.
 - Bài nộp (`worksheet-submissions`): chỉ Giáo viên **active** tạo được, qua `POST /api/worksheet-submissions`
   với `worksheet` và `answers` (`questionKey`, `value`). Server tự gán giáo viên, thời gian nộp và bản chụp đề
   từ worksheet gốc. Giáo viên chỉ đọc bài của mình, Admin đọc tất cả; không ai sửa/xóa được.
-  Chưa có giao diện điền và xem bài nộp.
+- Giao diện Giáo viên: `/giaovien/phieu` (danh sách phiếu), `/giaovien/phieu/[id]` (điền và nộp),
+  `/giaovien/bai-da-nop` và `/giaovien/bai-da-nop/[id]` (xem lại bài của chính mình, chỉ đọc).
+  Admin xem bài nộp của mọi Giáo viên trong `/admin` → Bài nộp worksheet.
 
 Chi tiết bảo mật và quy trình tạo Admin đầu tiên: xem [SECURITY.md](./SECURITY.md).
 
