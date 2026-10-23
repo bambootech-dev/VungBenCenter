@@ -5,6 +5,7 @@ import React from 'react'
 
 import { cn } from '@/utilities/ui'
 import { requireActiveTeacher } from '@/utilities/requireActiveTeacher'
+import { readSubtitle } from '@/worksheetTemplates/snapshot'
 
 import { EmptyState } from '../_components/EmptyState'
 import { Pagination } from '../_components/Pagination'
@@ -39,7 +40,10 @@ export default async function SubmissionListPage({ searchParams }: Props) {
     overrideAccess: false,
     page,
     select: {
+      data: true,
       submittedAt: true,
+      templateSnapshot: true,
+      title: true,
       worksheetSnapshot: { title: true },
     },
     sort: '-submittedAt',
@@ -69,16 +73,20 @@ export default async function SubmissionListPage({ searchParams }: Props) {
           )
         ) : (
           <ul className="space-y-4" data-testid="submission-list">
-            {result.docs.map((submission) => (
+            {result.docs.map((submission) => {
+              // Phiếu theo mẫu có `title`; bài kiểu cũ lấy tiêu đề từ bản chụp worksheet
+              const title = submission.title ?? submission.worksheetSnapshot?.title ?? 'Phiếu'
+              const subtitle = readSubtitle(submission.templateSnapshot, submission.data)
+
+              return (
               <li key={submission.id}>
                 <article
                   className={cn(cardClass, 'flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6')}
                   data-testid="submission-card"
                 >
                   <div>
-                    <h2 className="text-lg font-extrabold text-lesson-primary-dark">
-                      {submission.worksheetSnapshot.title}
-                    </h2>
+                    <h2 className="text-lg font-extrabold text-lesson-primary-dark">{title}</h2>
+                    {subtitle && <p className="mt-1 text-sm font-bold text-lesson-primary">{subtitle}</p>}
                     <p className="mt-1 inline-flex items-center gap-1.5 text-sm font-bold text-lesson-muted">
                       <Clock aria-hidden="true" className="size-4" strokeWidth={2.5} />
                       Nộp lúc{' '}
@@ -86,7 +94,7 @@ export default async function SubmissionListPage({ searchParams }: Props) {
                     </p>
                   </div>
                   <Link
-                    aria-label={`Xem chi tiết bài nộp ${submission.worksheetSnapshot.title} lúc ${formatDateTime(submission.submittedAt)}`}
+                    aria-label={`Xem chi tiết bài nộp ${title} lúc ${formatDateTime(submission.submittedAt)}`}
                     className={cn(secondaryButtonClass, 'self-start sm:self-auto')}
                     href={`/giaovien/bai-da-nop/${submission.id}`}
                   >
@@ -95,7 +103,8 @@ export default async function SubmissionListPage({ searchParams }: Props) {
                   </Link>
                 </article>
               </li>
-            ))}
+              )
+            })}
           </ul>
         )}
 

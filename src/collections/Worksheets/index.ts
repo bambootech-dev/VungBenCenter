@@ -77,6 +77,9 @@ export const Worksheets: CollectionConfig = {
 
   admin: {
     defaultColumns: ['title', 'lesson', 'updatedAt'],
+    // Phiếu mới dùng mẫu hệ thống (src/worksheetTemplates); collection này chỉ còn cho bài nộp kiểu cũ
+    description:
+      'Worksheet kiểu cũ, chỉ giữ để đọc lại các bài đã nộp trước đây. Không cần tạo mới: Giáo viên tạo phiếu theo mẫu có sẵn.',
     useAsTitle: 'title',
   },
 

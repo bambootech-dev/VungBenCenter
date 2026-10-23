@@ -430,6 +430,8 @@ export interface Lesson {
   createdAt: string;
 }
 /**
+ * Worksheet kiểu cũ, chỉ giữ để đọc lại các bài đã nộp trước đây. Không cần tạo mới: Giáo viên tạo phiếu theo mẫu có sẵn.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "worksheets".
  */
@@ -457,14 +459,14 @@ export interface Worksheet {
   createdAt: string;
 }
 /**
- * Bài Giáo viên đã nộp. Chỉ xem, không sửa hoặc xóa được.
+ * Phiếu Giáo viên đã nộp. Chỉ xem, không sửa hoặc xóa được.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "worksheet-submissions".
  */
 export interface WorksheetSubmission {
   id: number;
-  worksheet: number | Worksheet;
+  title?: string | null;
   /**
    * Lấy từ phiên đăng nhập.
    */
@@ -473,18 +475,41 @@ export interface WorksheetSubmission {
    * Do server đặt khi nộp.
    */
   submittedAt: string;
+  templateCode?: string | null;
+  templateVersion?: number | null;
+  templateSnapshot?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  data?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  worksheet?: (number | null) | Worksheet;
   /**
    * Server sao chép từ worksheet gốc khi nộp.
    */
-  worksheetSnapshot: {
-    title: string;
+  worksheetSnapshot?: {
+    title?: string | null;
     instructions?: string | null;
-    questions: {
-      key: string;
-      label: string;
-      required?: boolean | null;
-      id?: string | null;
-    }[];
+    questions?:
+      | {
+          key: string;
+          label: string;
+          required?: boolean | null;
+          id?: string | null;
+        }[]
+      | null;
   };
   /**
    * Chỉ lưu câu đã trả lời; câu không bắt buộc bỏ trống sẽ không có dòng.
@@ -757,9 +782,14 @@ export interface WorksheetsSelect<T extends boolean = true> {
  * via the `definition` "worksheet-submissions_select".
  */
 export interface WorksheetSubmissionsSelect<T extends boolean = true> {
-  worksheet?: T;
+  title?: T;
   teacher?: T;
   submittedAt?: T;
+  templateCode?: T;
+  templateVersion?: T;
+  templateSnapshot?: T;
+  data?: T;
+  worksheet?: T;
   worksheetSnapshot?:
     | T
     | {

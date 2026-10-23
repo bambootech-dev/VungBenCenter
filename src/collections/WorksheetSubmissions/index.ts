@@ -6,9 +6,12 @@ import {
   type CollectionConfig,
 } from 'payload'
 
+import { getTemplate } from '@/worksheetTemplates/definitions'
+import { normalizeTemplateValues } from '@/worksheetTemplates/validate'
+
 import { activeTeacher } from '../../access/activeTeacher'
 import { QUESTION_KEY_MAX_LENGTH } from '../Worksheets/questions'
-import { ANSWER_MAX_LENGTH, normalizeAnswers } from './answers'
+import { ANSWER_MAX_LENGTH } from './answers'
 
 export const WORKSHEET_SUBMISSIONS_SLUG = 'worksheet-submissions'
 
@@ -25,25 +28,19 @@ const readOwnOrAdmin: Access = ({ req: { user } }) => {
   return false
 }
 
-const extractID = (value: unknown): number | string | null => {
-  if (typeof value === 'number' || typeof value === 'string') return value
-
-  if (value && typeof value === 'object' && 'id' in value) {
-    const { id } = value as { id: unknown }
-
-    if (typeof id === 'number' || typeof id === 'string') return id
-  }
-
-  return null
-}
+// Bài nộp theo mẫu hệ thống (templateCode) hay bài kiểu cũ theo worksheet do Admin soạn.
+// admin.condition nhận (data, siblingData): `data` là toàn bộ document đang mở
+const isTemplateSubmission = (data: { templateCode?: unknown } | undefined) => Boolean(data?.templateCode)
+const isLegacySubmission = (data: { templateCode?: unknown } | undefined) => !data?.templateCode
 
 /**
- * Server tự đặt giáo viên, thời gian nộp và bản chụp đề; mọi giá trị client gửi cho các field
- * này đều bị bỏ. Chạy trước bước validate/field access của Payload, nên kể cả Local API với
- * overrideAccess: true cũng phải có req.user là Giáo viên.
+ * Server tự đặt giáo viên, thời gian nộp, tiêu đề và bản chụp mẫu; mọi giá trị client gửi cho các
+ * field này đều bị bỏ. Chỉ nhận `templateCode` (mẫu hệ thống) và `data` (giá trị đã điền).
+ * Chạy trước bước validate/field access của Payload, nên kể cả Local API với overrideAccess: true
+ * cũng phải có req.user là Giáo viên.
  */
-const prepareSubmission: CollectionBeforeChangeHook = async ({ data, operation, req }) => {
-  // Bản đầu không cho sửa bài đã nộp, kể cả qua Local API bỏ qua access control
+const prepareSubmission: CollectionBeforeChangeHook = ({ data, operation, req }) => {
+  // Không cho sửa bài đã nộp, kể cả qua Local API bỏ qua access control
   if (operation !== 'create') {
     throw new APIError('Bài nộp không thể chỉnh sửa.', 403, undefined, true)
   }
@@ -51,70 +48,48 @@ const prepareSubmission: CollectionBeforeChangeHook = async ({ data, operation, 
   const { user } = req
 
   if (!user || user.role !== 'giaovien') {
-    throw new APIError('Chỉ Giáo viên đăng nhập mới nộp được worksheet.', 403, undefined, true)
+    throw new APIError('Chỉ Giáo viên đăng nhập mới nộp được phiếu.', 403, undefined, true)
   }
 
-  const worksheetID = extractID(data.worksheet)
+  // Bài mới luôn theo mẫu hệ thống; luồng worksheet do Admin soạn chỉ còn để đọc bài cũ
+  const template = getTemplate(data.templateCode)
 
-  const worksheet =
-    worksheetID === null
-      ? null
-      : await req.payload
-          .findByID({
-            collection: 'worksheets',
-            depth: 0,
-            disableErrors: true,
-            id: worksheetID,
-            // Kiểm tra quyền đọc worksheet của chính người nộp
-            overrideAccess: false,
-            req,
-            user,
-          })
-          .catch(() => null)
-
-  if (!worksheet) {
+  if (!template) {
     throw new ValidationError({
       collection: WORKSHEET_SUBMISSIONS_SLUG,
-      errors: [{ path: 'worksheet', message: 'Worksheet không tồn tại hoặc bạn không có quyền đọc.' }],
+      errors: [{ path: 'templateCode', message: 'Mẫu phiếu không tồn tại.' }],
       req,
     })
   }
 
-  const questions = worksheet.questions.map(({ key, label, required }) => ({
-    key,
-    label,
-    required: Boolean(required),
-  }))
-
-  const { answers, errors } = normalizeAnswers(data.answers, questions)
+  const { errors, values } = normalizeTemplateValues(template, data.data)
 
   if (errors.length > 0) {
     throw new ValidationError({ collection: WORKSHEET_SUBMISSIONS_SLUG, errors, req })
   }
 
   return {
-    answers,
+    data: values,
     submittedAt: new Date().toISOString(),
     teacher: user.id,
-    worksheet: worksheet.id,
-    worksheetSnapshot: {
-      title: worksheet.title,
-      instructions: worksheet.instructions ?? null,
-      questions,
-    },
+    templateCode: template.code,
+    // Bản sao sâu: bài đã nộp không đổi khi định nghĩa mẫu trong code thay đổi
+    templateSnapshot: JSON.parse(JSON.stringify(template)),
+    templateVersion: template.version,
+    title: template.title,
   }
 }
 
 export const WorksheetSubmissions: CollectionConfig = {
   slug: WORKSHEET_SUBMISSIONS_SLUG,
   labels: {
-    singular: 'Bài nộp worksheet',
-    plural: 'Bài nộp worksheet',
+    singular: 'Phiếu đã nộp',
+    plural: 'Phiếu đã nộp',
   },
 
   access: {
     create: activeTeacher,
-    // Bản đầu: không ai sửa/xóa được bài nộp qua REST, GraphQL hay /admin
+    // Không ai sửa/xóa được bài nộp qua REST, GraphQL hay /admin
     delete: () => false,
     read: readOwnOrAdmin,
     update: () => false,
@@ -122,8 +97,10 @@ export const WorksheetSubmissions: CollectionConfig = {
 
   admin: {
     // Lọc theo giáo viên: nút "Filters" của danh sách, field "Giáo viên nộp"
-    defaultColumns: ['id', 'teacher', 'worksheet', 'submittedAt'],
-    description: 'Bài Giáo viên đã nộp. Chỉ xem, không sửa hoặc xóa được.',
+    defaultColumns: ['title', 'teacher', 'submittedAt'],
+    description: 'Phiếu Giáo viên đã nộp. Chỉ xem, không sửa hoặc xóa được.',
+    listSearchableFields: ['title'],
+    useAsTitle: 'title',
   },
 
   defaultSort: '-submittedAt',
@@ -134,12 +111,11 @@ export const WorksheetSubmissions: CollectionConfig = {
 
   fields: [
     {
-      name: 'worksheet',
-      label: 'Worksheet',
-      type: 'relationship',
-      relationTo: 'worksheets',
-      required: true,
-      index: true,
+      // Tên mẫu (hoặc tên worksheet với bài cũ) lúc nộp, để hiển thị và tìm trong danh sách
+      name: 'title',
+      label: 'Tên phiếu',
+      type: 'text',
+      admin: { readOnly: true },
     },
     {
       name: 'teacher',
@@ -166,11 +142,60 @@ export const WorksheetSubmissions: CollectionConfig = {
       },
     },
     {
+      name: 'templateCode',
+      label: 'Mã mẫu',
+      type: 'text',
+      index: true,
+      admin: { condition: isTemplateSubmission, readOnly: true },
+    },
+    {
+      name: 'templateVersion',
+      label: 'Phiên bản mẫu',
+      type: 'number',
+      admin: { condition: isTemplateSubmission, readOnly: true },
+    },
+    {
+      // Hiển thị phiếu theo mẫu (đọc từ templateSnapshot + data) trong /admin
+      name: 'preview',
+      type: 'ui',
+      admin: {
+        components: {
+          Field: '/collections/WorksheetSubmissions/SubmissionPreview#SubmissionPreview',
+        },
+        condition: isTemplateSubmission,
+      },
+    },
+    {
+      // Bản chụp mẫu lúc nộp (cấu trúc đầy đủ), để bài cũ hiển thị đúng khi mẫu được cập nhật
+      name: 'templateSnapshot',
+      label: 'Mẫu lúc nộp',
+      type: 'json',
+      admin: { hidden: true },
+    },
+    {
+      // Giá trị giáo viên đã điền, theo key của mẫu
+      name: 'data',
+      label: 'Dữ liệu phiếu',
+      type: 'json',
+      admin: { hidden: true },
+    },
+
+    // Bài nộp kiểu cũ (worksheet do Admin soạn): chỉ còn để đọc lịch sử
+    {
+      name: 'worksheet',
+      label: 'Worksheet (kiểu cũ)',
+      type: 'relationship',
+      relationTo: 'worksheets',
+      index: true,
+      admin: { condition: isLegacySubmission, readOnly: true },
+    },
+    {
       // Bản chụp đề lúc nộp: giữ nguyên ý nghĩa bài nộp khi worksheet gốc bị sửa sau này
       name: 'worksheetSnapshot',
       label: 'Đề lúc nộp',
       type: 'group',
       admin: {
+        condition: isLegacySubmission,
         description: 'Server sao chép từ worksheet gốc khi nộp.',
         readOnly: true,
       },
@@ -179,7 +204,6 @@ export const WorksheetSubmissions: CollectionConfig = {
           name: 'title',
           label: 'Tiêu đề',
           type: 'text',
-          required: true,
         },
         {
           name: 'instructions',
@@ -192,8 +216,6 @@ export const WorksheetSubmissions: CollectionConfig = {
           type: 'array',
           // Tên bảng mặc định làm tên index vượt giới hạn 63 ký tự của Postgres
           dbName: 'worksheet_submissions_snapshot_questions',
-          required: true,
-          minRows: 1,
           admin: {
             components: {
               RowLabel: '/collections/WorksheetSubmissions/RowLabels#SnapshotQuestionRowLabel',
@@ -232,6 +254,7 @@ export const WorksheetSubmissions: CollectionConfig = {
         components: {
           RowLabel: '/collections/WorksheetSubmissions/RowLabels#AnswerRowLabel',
         },
+        condition: isLegacySubmission,
         description: 'Chỉ lưu câu đã trả lời; câu không bắt buộc bỏ trống sẽ không có dòng.',
         initCollapsed: false,
         readOnly: true,

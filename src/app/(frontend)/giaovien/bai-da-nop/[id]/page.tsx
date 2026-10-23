@@ -5,7 +5,9 @@ import { notFound } from 'next/navigation'
 import React from 'react'
 
 import { cn } from '@/utilities/ui'
+import { TemplateValuesView } from '@/components/WorksheetTemplate/TemplateValuesView'
 import { requireActiveTeacher } from '@/utilities/requireActiveTeacher'
+import { readTemplateSnapshot, readTemplateValues } from '@/worksheetTemplates/snapshot'
 
 import { cardClass, focusRing, formatDateTime, pageTitleClass, pillClass } from '../../_components/teacherUi'
 
@@ -47,7 +49,10 @@ export default async function SubmissionDetailPage({ params, searchParams }: Pro
     notFound()
   }
 
+  // Phiếu theo mẫu hệ thống: hiển thị theo bản chụp mẫu lúc nộp; bài kiểu cũ: theo bản chụp worksheet
+  const template = readTemplateSnapshot(submission.templateSnapshot)
   const snapshot = submission.worksheetSnapshot
+  const title = submission.title ?? snapshot?.title ?? 'Phiếu'
   const teacherName =
     submission.teacher && typeof submission.teacher === 'object' ? submission.teacher.name : user.name
   // Ghép câu trả lời theo mã câu hỏi của bản chụp đề, không theo vị trí
@@ -56,7 +61,7 @@ export default async function SubmissionDetailPage({ params, searchParams }: Pro
   return (
     <main className="flex-1">
       <div className="lesson-container py-6 md:py-10">
-        <div className="mx-auto max-w-3xl">
+        <div className={cn('mx-auto', template ? 'max-w-6xl' : 'max-w-3xl')}>
           <Link
             className={cn(
               'mb-5 inline-flex min-h-11 items-center gap-1 rounded-full pr-3 text-base font-bold text-lesson-primary-dark hover:underline',
@@ -82,7 +87,7 @@ export default async function SubmissionDetailPage({ params, searchParams }: Pro
           <header className="mb-6">
             <p className={`${pillClass} mb-3`}>Bài đã nộp</p>
             <h1 className={pageTitleClass} data-testid="submission-title">
-              {snapshot.title}
+              {title}
             </h1>
             <dl className="mt-4 flex flex-col gap-2 text-base font-bold text-lesson-muted sm:flex-row sm:gap-6">
               <div className="inline-flex items-center gap-1.5">
@@ -106,7 +111,15 @@ export default async function SubmissionDetailPage({ params, searchParams }: Pro
             </dl>
           </header>
 
-          {snapshot.instructions && (
+          {template && (
+            <TemplateValuesView
+              teacherName={teacherName}
+              template={template}
+              values={readTemplateValues(submission.data)}
+            />
+          )}
+
+          {!template && snapshot?.instructions && (
             <section aria-label="Hướng dẫn" className={cn(cardClass, 'mb-6 p-5 sm:p-6')}>
               <h2 className="mb-2 text-lg font-extrabold text-lesson-primary-dark">Hướng dẫn</h2>
               <p className="whitespace-pre-line text-base font-semibold text-lesson-muted">
@@ -115,8 +128,9 @@ export default async function SubmissionDetailPage({ params, searchParams }: Pro
             </section>
           )}
 
+          {!template && (
           <ol className="space-y-5" data-testid="submission-answers">
-            {snapshot.questions.map((question, index) => {
+            {(snapshot?.questions ?? []).map((question, index) => {
               const answer = answers.get(question.key)
 
               return (
@@ -152,6 +166,7 @@ export default async function SubmissionDetailPage({ params, searchParams }: Pro
               )
             })}
           </ol>
+          )}
         </div>
       </div>
     </main>

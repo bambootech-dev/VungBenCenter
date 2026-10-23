@@ -4,24 +4,22 @@ import { GRAPHQL_POST } from '@payloadcms/next/routes'
 import { getPayload, handleEndpoints, type Payload } from 'payload'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import {
-  ANSWER_MAX_LENGTH,
-  normalizeAnswers,
-} from '@/collections/WorksheetSubmissions/answers'
-import type { User, Worksheet, WorksheetSubmission } from '@/payload-types'
+import type { User, WorksheetSubmission } from '@/payload-types'
+import { PHIEU_AM_MUC_TIEU, PHIEU_THEO_DOI_CA, WORKSHEET_TEMPLATES } from '@/worksheetTemplates/definitions'
+import { normalizeTemplateValues } from '@/worksheetTemplates/validate'
 
 import { assertConnectedToLocalTestDatabase } from '../helpers/localTestDatabase'
 
-// Chỉ chạy trên database local trong .env.test (guard trong vitest.setup.ts)
+// Chỉ chạy trên database local trong .env.test (guard trong vitest.setup.ts).
+// Dữ liệu test là giá trị trung tính, không lấy từ ảnh mẫu trong docs/.
 
 let payload: Payload
 
 const PASSWORD = 'MatKhau123!'
-
-// Chuỗi đánh dấu câu trả lời: không được xuất hiện trong phản hồi cho người không có quyền
-const SECRET_ANSWER = 'CAU-TRA-LOI-CHI-CHU-BAI-VA-ADMIN-DUOC-XEM'
-
 const SLUG = 'worksheet-submissions'
+
+// Chuỗi đánh dấu: không được xuất hiện trong phản hồi cho người không có quyền
+const SECRET = 'DU-LIEU-PHIEU-CHI-CHU-BAI-VA-ADMIN-DUOC-XEM'
 
 type CreateUserInput = Pick<User, 'role' | 'accountStatus'> & { email: string }
 
@@ -33,10 +31,7 @@ const createUser = ({ email, role, accountStatus }: CreateUserInput) =>
   })
 
 const loginToken = async (email: string) => {
-  const { token } = await payload.login({
-    collection: 'users',
-    data: { email, password: PASSWORD },
-  })
+  const { token } = await payload.login({ collection: 'users', data: { email, password: PASSWORD } })
 
   if (!token) throw new Error(`Không lấy được token cho ${email}`)
 
@@ -56,10 +51,7 @@ const rest = (
     config,
     request: new Request(`http://localhost:3000/api${path}`, {
       method,
-      headers: {
-        ...authHeaders(token),
-        ...(body ? { 'Content-Type': 'application/json' } : {}),
-      },
+      headers: { ...authHeaders(token), ...(body ? { 'Content-Type': 'application/json' } : {}) },
       body: body ? JSON.stringify(body) : undefined,
     }),
   })
@@ -74,49 +66,58 @@ const graphql = (query: string, token?: string) =>
   )
 
 // Payload trả lỗi validation dạng { errors: [{ data: { errors: [{ path, message }] } }] }
-const validationErrors = async (response: Response) => {
-  const body = (await response.json()) as {
-    errors?: { data?: { errors?: { message: string; path: string }[] } }[]
-  }
+const errorPaths = async (response: Response) => {
+  const body = (await response.json()) as { errors?: { data?: { errors?: { path: string }[] } }[] }
 
-  return (body.errors ?? []).flatMap((error) => error.data?.errors ?? [])
+  return (body.errors ?? []).flatMap((error) => error.data?.errors ?? []).map((error) => error.path)
 }
 
-const countSubmissions = async () =>
-  (await payload.count({ collection: SLUG, overrideAccess: true })).totalDocs
+const countSubmissions = async () => (await payload.count({ collection: SLUG, overrideAccess: true })).totalDocs
 
 const resetData = async () => {
-  // Bài nộp trước: teacher/worksheet là NOT NULL nên không xóa được user/worksheet còn bài nộp
+  // Bài nộp trước: teacher là NOT NULL nên không xóa được user còn bài nộp
   await payload.db.deleteMany({ collection: SLUG, where: {} })
   await payload.db.deleteMany({ collection: 'worksheets', where: {} })
   await payload.db.deleteMany({ collection: 'users', where: {} })
 }
+
+// Giá trị như form gửi lên: mọi ô là chuỗi, có khoảng trắng thừa và một dòng trống
+const caData = (marker = SECRET) => ({
+  tre: `  Trẻ thử nghiệm ${marker}  `,
+  ngayCT: '2026-10-20',
+  tuGio: '08:00',
+  denGio: '09:30',
+  mucTieu: [
+    { soBaiHoc: '1', capDo: '2', mucTieuCuThe: 'Mục tiêu thử nghiệm', co1: '+', co2: '-', co10: '+', phanTramDung: '67' },
+    { soBaiHoc: '', capDo: '', mucTieuCuThe: '   ' },
+    { soBaiHoc: '2', mucTieuCuThe: 'Mục tiêu thứ hai', phanTramDung: 100 },
+  ],
+})
+
+const amData = () => ({
+  tenTre: 'Trẻ thử nghiệm',
+  amMucTieu: 'Tr',
+  thangNam: '2026-10',
+  buoi: [{ ngay: '3', phanTram: '40' }, { ngay: '', phanTram: '' }, { ngay: 7, phanTram: 60 }],
+  ghiChu: 'Ghi chú thử nghiệm',
+})
 
 let admin: User
 let teacherA: User
 let teacherB: User
 let pendingTeacher: User
 let student: User
-let worksheet: Worksheet
 let tokenA: string
 
-const validAnswers = (prefix = SECRET_ANSWER) => [
-  { questionKey: 'muc-tieu', value: `  ${prefix} mục tiêu  ` },
-  { questionKey: 'ghi-chu', value: `${prefix} ghi chú` },
-]
-
-const submit = (body: Record<string, unknown>, token = tokenA) =>
+const submit = (body: Record<string, unknown>, token: string | undefined = tokenA) =>
   rest(`/${SLUG}`, { method: 'POST', token, body })
 
-const submitValid = async (token = tokenA, prefix?: string) => {
-  const response = await submit({ worksheet: worksheet.id, answers: validAnswers(prefix) }, token)
+const submitCa = async (token = tokenA, marker?: string) => {
+  const response = await submit({ templateCode: PHIEU_THEO_DOI_CA.code, data: caData(marker) }, token)
   expect(response.status).toBe(201)
 
   return ((await response.json()) as { doc: WorksheetSubmission }).doc
 }
-
-const relationID = (value: unknown) =>
-  value && typeof value === 'object' && 'id' in value ? (value as { id: unknown }).id : value
 
 beforeAll(async () => {
   payload = await getPayload({ config })
@@ -133,93 +134,101 @@ beforeEach(async () => {
   admin = await createUser({ email: 'admin@test.local', role: 'admin', accountStatus: 'active' })
   teacherA = await createUser({ email: 'gv-a@test.local', role: 'giaovien', accountStatus: 'active' })
   teacherB = await createUser({ email: 'gv-b@test.local', role: 'giaovien', accountStatus: 'active' })
-  pendingTeacher = await createUser({
-    email: 'gv-pending@test.local',
-    role: 'giaovien',
-    accountStatus: 'pending',
-  })
+  pendingTeacher = await createUser({ email: 'gv-pending@test.local', role: 'giaovien', accountStatus: 'pending' })
   student = await createUser({ email: 'hs@test.local', role: 'hocsinh', accountStatus: 'active' })
-
-  worksheet = await payload.create({
-    collection: 'worksheets',
-    overrideAccess: true,
-    data: {
-      title: 'Worksheet mẫu',
-      instructions: 'Điền các ô bên dưới.',
-      questions: [
-        { key: 'muc-tieu', label: 'Câu bắt buộc', required: true },
-        { key: 'ghi-chu', label: 'Câu không bắt buộc', required: false },
-      ],
-    },
-  })
 
   tokenA = await loginToken(teacherA.email)
 })
 
-describe('Đăng ký collection', () => {
-  it('collection worksheet-submissions có các field worksheet, teacher, submittedAt, worksheetSnapshot, answers', () => {
-    const fields = payload.collections[SLUG].config.fields
-      .filter((field) => 'name' in field)
-      .map((field) => ('name' in field ? field.name : null))
-
-    expect(fields.filter((name) => !['id', 'updatedAt', 'createdAt'].includes(name ?? ''))).toEqual([
-      'worksheet',
-      'teacher',
-      'submittedAt',
-      'worksheetSnapshot',
-      'answers',
+describe('Mẫu phiếu hệ thống', () => {
+  it('có đúng 2 mẫu với mã và phiên bản ổn định', () => {
+    expect(WORKSHEET_TEMPLATES.map(({ code, version }) => ({ code, version }))).toEqual([
+      { code: 'phieu-theo-doi-ca', version: 1 },
+      { code: 'phieu-am-muc-tieu', version: 1 },
     ])
+  })
+
+  it('mẫu "Phiếu theo dõi ca" có cột Số bài học, Cấp độ, Mục tiêu cụ thể, 10 cơ hội và % đúng', () => {
+    const table = PHIEU_THEO_DOI_CA.sections.flatMap((s) => s.fields).find((f) => f.key === 'mucTieu')
+
+    expect(table?.kind).toBe('table')
+    expect(table && table.kind === 'table' ? table.columns.map((c) => c.key) : []).toEqual([
+      'soBaiHoc',
+      'capDo',
+      'mucTieuCuThe',
+      ...Array.from({ length: 10 }, (_, i) => `co${i + 1}`),
+      'phanTramDung',
+    ])
+  })
+
+  it('mẫu "Âm mục tiêu" có 15 buổi cố định và biểu đồ 0–100%', () => {
+    const table = PHIEU_AM_MUC_TIEU.sections.flatMap((s) => s.fields).find((f) => f.key === 'buoi')
+
+    expect(table).toMatchObject({ kind: 'table', mode: 'fixed', rows: 15, chart: { min: 0, max: 100 } })
   })
 })
 
 describe('Nộp hợp lệ', () => {
-  it('lưu bài nộp, đúng giáo viên, đúng worksheet, kèm bản chụp đề và thời gian server', async () => {
+  it('lưu phiếu theo dõi ca: đúng giáo viên, thời gian server, bản chụp mẫu và dữ liệu đã chuẩn hóa', async () => {
     const before = Date.now()
-    const doc = await submitValid()
+    const doc = await submitCa()
     const after = Date.now()
 
     const saved = await payload.findByID({ collection: SLUG, id: doc.id, depth: 0 })
 
     expect(saved.teacher).toBe(teacherA.id)
-    expect(saved.worksheet).toBe(worksheet.id)
-    expect(saved.worksheetSnapshot).toMatchObject({
-      title: 'Worksheet mẫu',
-      instructions: 'Điền các ô bên dưới.',
-      questions: [
-        { key: 'muc-tieu', label: 'Câu bắt buộc', required: true },
-        { key: 'ghi-chu', label: 'Câu không bắt buộc', required: false },
-      ],
-    })
-    // Câu trả lời được bỏ khoảng trắng đầu/cuối
-    expect(saved.answers?.map(({ questionKey, value }) => ({ questionKey, value }))).toEqual([
-      { questionKey: 'muc-tieu', value: `${SECRET_ANSWER} mục tiêu` },
-      { questionKey: 'ghi-chu', value: `${SECRET_ANSWER} ghi chú` },
-    ])
+    expect(saved.templateCode).toBe('phieu-theo-doi-ca')
+    expect(saved.templateVersion).toBe(1)
+    expect(saved.title).toBe(PHIEU_THEO_DOI_CA.title)
+    expect(saved.templateSnapshot).toEqual(JSON.parse(JSON.stringify(PHIEU_THEO_DOI_CA)))
+    expect(saved.worksheet ?? null).toBeNull()
+
+    const data = saved.data as Record<string, unknown>
+    expect(data.tre).toBe(`Trẻ thử nghiệm ${SECRET}`)
+    expect(data).toMatchObject({ ngayCT: '2026-10-20', tuGio: '08:00', denGio: '09:30' })
+
+    // Dòng trống bị bỏ; số lưu dạng số; mọi cột của mẫu đều có mặt
+    const rows = data.mucTieu as Record<string, unknown>[]
+    expect(rows).toHaveLength(2)
+    expect(rows[0]).toMatchObject({ soBaiHoc: '1', capDo: '2', co1: '+', co2: '-', co3: null, co10: '+', phanTramDung: 67 })
+    expect(rows[1]).toMatchObject({ soBaiHoc: '2', capDo: null, phanTramDung: 100 })
+    // 3 cột thông tin + 10 cơ hội + % đúng
+    expect(Object.keys(rows[0])).toHaveLength(14)
 
     const submittedAt = new Date(saved.submittedAt).getTime()
     expect(submittedAt).toBeGreaterThanOrEqual(before - 1000)
     expect(submittedAt).toBeLessThanOrEqual(after + 1000)
-    expect(saved.createdAt).toBeTruthy()
-    expect(saved.updatedAt).toBeTruthy()
   })
 
-  it('được bỏ qua câu không bắt buộc; câu chỉ có khoảng trắng không được lưu', async () => {
+  it('lưu phiếu âm mục tiêu: luôn đủ 15 buổi, buổi trống là null', async () => {
+    const response = await submit({ templateCode: PHIEU_AM_MUC_TIEU.code, data: amData() })
+    expect(response.status).toBe(201)
+    const { doc } = (await response.json()) as { doc: WorksheetSubmission }
+
+    const data = doc.data as Record<string, unknown>
+    const rows = data.buoi as Record<string, unknown>[]
+    expect(rows).toHaveLength(15)
+    expect(rows[0]).toEqual({ ngay: 3, phanTram: 40 })
+    expect(rows[1]).toEqual({ ngay: null, phanTram: null })
+    expect(rows[2]).toEqual({ ngay: 7, phanTram: 60 })
+    expect(rows[14]).toEqual({ ngay: null, phanTram: null })
+    expect(data).toMatchObject({ tenTre: 'Trẻ thử nghiệm', amMucTieu: 'Tr', thangNam: '2026-10' })
+  })
+
+  it('trường không có trong mẫu bị bỏ', async () => {
     const response = await submit({
-      worksheet: worksheet.id,
-      answers: [
-        { questionKey: 'muc-tieu', value: 'Có trả lời' },
-        { questionKey: 'ghi-chu', value: '   ' },
-      ],
+      templateCode: PHIEU_AM_MUC_TIEU.code,
+      data: { ...amData(), truongLa: 'x', buoi: [{ ngay: 1, phanTram: 10, cotLa: 'y' }] },
     })
     expect(response.status).toBe(201)
-
     const { doc } = (await response.json()) as { doc: WorksheetSubmission }
-    expect(doc.answers?.map((answer) => answer.questionKey)).toEqual(['muc-tieu'])
+
+    expect(JSON.stringify(doc.data)).not.toMatch(/truongLa|cotLa/)
   })
 
-  it('một giáo viên nộp được nhiều bài riêng biệt cho cùng worksheet', async () => {
-    const first = await submitValid()
-    const second = await submitValid()
+  it('một giáo viên nộp được nhiều phiếu riêng biệt', async () => {
+    const first = await submitCa()
+    const second = await submitCa()
 
     expect(first.id).not.toBe(second.id)
     expect(await countSubmissions()).toBe(2)
@@ -230,26 +239,23 @@ describe('Nộp hợp lệ', () => {
       collection: SLUG,
       overrideAccess: false,
       user: asUser(teacherA),
-      data: { worksheet: worksheet.id, answers: validAnswers() } as never,
+      data: { templateCode: PHIEU_AM_MUC_TIEU.code, data: amData() } as never,
     })
 
-    expect(relationID(doc.teacher)).toBe(teacherA.id)
+    expect(typeof doc.teacher === 'object' ? doc.teacher?.id : doc.teacher).toBe(teacherA.id)
   })
 })
 
 describe('Không giả mạo được', () => {
-  it('teacher, submittedAt và worksheetSnapshot do client gửi đều bị bỏ', async () => {
+  it('teacher, submittedAt, title, templateVersion và templateSnapshot do client gửi đều bị bỏ', async () => {
     const response = await submit({
-      worksheet: worksheet.id,
-      answers: validAnswers(),
+      templateCode: PHIEU_THEO_DOI_CA.code,
+      data: caData(),
       teacher: teacherB.id,
       submittedAt: '2000-01-01T00:00:00.000Z',
-      createdAt: '2000-01-01T00:00:00.000Z',
-      worksheetSnapshot: {
-        title: 'ĐỀ GIẢ',
-        instructions: 'HƯỚNG DẪN GIẢ',
-        questions: [{ key: 'muc-tieu', label: 'NHÃN GIẢ', required: false }],
-      },
+      title: 'TIÊU ĐỀ GIẢ',
+      templateVersion: 99,
+      templateSnapshot: { ...PHIEU_THEO_DOI_CA, title: 'MẪU GIẢ', sections: [] },
     })
     expect(response.status).toBe(201)
     const { doc } = (await response.json()) as { doc: WorksheetSubmission }
@@ -257,110 +263,105 @@ describe('Không giả mạo được', () => {
     const saved = await payload.findByID({ collection: SLUG, id: doc.id, depth: 0 })
     expect(saved.teacher).toBe(teacherA.id)
     expect(new Date(saved.submittedAt).getFullYear()).toBeGreaterThan(2000)
-    expect(new Date(saved.createdAt).getFullYear()).toBeGreaterThan(2000)
-    expect(JSON.stringify(saved.worksheetSnapshot)).not.toMatch(/GIẢ/)
-    expect(saved.worksheetSnapshot.title).toBe('Worksheet mẫu')
+    expect(saved.title).toBe(PHIEU_THEO_DOI_CA.title)
+    expect(saved.templateVersion).toBe(1)
+    expect(JSON.stringify(saved.templateSnapshot)).not.toContain('GIẢ')
   })
 
-  it('bản chụp giả không làm câu bắt buộc thành không bắt buộc', async () => {
-    const response = await submit({
-      worksheet: worksheet.id,
-      answers: [{ questionKey: 'ghi-chu', value: 'Chỉ trả lời câu không bắt buộc' }],
-      worksheetSnapshot: {
-        title: 'x',
-        questions: [{ key: 'muc-tieu', label: 'x', required: false }],
-      },
-    })
-    expect(response.status).toBe(400)
-    expect(await countSubmissions()).toBe(0)
-  })
-
-  it('Local API với overrideAccess: true nhưng không có user bị từ chối (không có giáo viên để gán)', async () => {
+  it('Local API với overrideAccess: true nhưng không có user bị từ chối', async () => {
     await expect(
       payload.create({
         collection: SLUG,
         overrideAccess: true,
-        data: { worksheet: worksheet.id, teacher: teacherA.id, answers: validAnswers() } as never,
+        data: { templateCode: PHIEU_AM_MUC_TIEU.code, data: amData(), teacher: teacherA.id } as never,
       }),
     ).rejects.toThrow()
+    expect(await countSubmissions()).toBe(0)
+  })
+
+  it('không tạo được bài nộp kiểu cũ theo worksheet do Admin soạn', async () => {
+    const worksheet = await payload.create({
+      collection: 'worksheets',
+      overrideAccess: true,
+      data: { title: 'Worksheet cũ', questions: [{ key: 'cau-1', label: 'Câu 1', required: true }] },
+    })
+
+    const response = await submit({ worksheet: worksheet.id, answers: [{ questionKey: 'cau-1', value: 'x' }] })
+    expect(response.status).toBe(400)
+    expect(await errorPaths(response)).toContain('templateCode')
     expect(await countSubmissions()).toBe(0)
   })
 })
 
 describe('Validation', () => {
-  const expectRejected = async (body: Record<string, unknown>, path: string) => {
-    const response = await submit(body)
+  const expectRejected = async (data: unknown, path: string, templateCode: string = PHIEU_THEO_DOI_CA.code) => {
+    const response = await submit({ templateCode, data })
     expect(response.status).toBe(400)
-    expect((await validationErrors(response)).map((error) => error.path)).toContain(path)
+    expect(await errorPaths(response)).toContain(path)
     expect(await countSubmissions()).toBe(0)
   }
 
-  it('từ chối khi thiếu câu bắt buộc', async () => {
-    await expectRejected(
-      { worksheet: worksheet.id, answers: [{ questionKey: 'ghi-chu', value: 'x' }] },
-      'answers',
-    )
-    await expectRejected({ worksheet: worksheet.id }, 'answers')
+  it('từ chối mẫu không tồn tại', async () => {
+    await expectRejected(caData(), 'templateCode', 'mau-khong-ton-tai')
+    await expectRejected(caData(), 'templateCode', '')
   })
 
-  it('câu bắt buộc chỉ có khoảng trắng được coi là trống', async () => {
-    await expectRejected(
-      { worksheet: worksheet.id, answers: [{ questionKey: 'muc-tieu', value: ' \n\t ' }] },
-      'answers',
-    )
+  it('thiếu trường bắt buộc hoặc chỉ có khoảng trắng', async () => {
+    await expectRejected({ ...caData(), tre: '   ' }, 'values.tre')
+    await expectRejected({ ...caData(), ngayCT: undefined }, 'values.ngayCT')
+    await expectRejected({ ...amData(), amMucTieu: ' ' }, 'values.amMucTieu', PHIEU_AM_MUC_TIEU.code)
+    await expectRejected({ ...amData(), thangNam: '' }, 'values.thangNam', PHIEU_AM_MUC_TIEU.code)
   })
 
-  it('từ chối mã câu hỏi không thuộc worksheet', async () => {
-    await expectRejected(
-      { worksheet: worksheet.id, answers: [...validAnswers(), { questionKey: 'la', value: 'x' }] },
-      'answers.2.questionKey',
-    )
-  })
-
-  it('từ chối mã câu hỏi trùng trong một bài nộp', async () => {
-    await expectRejected(
-      {
-        worksheet: worksheet.id,
-        answers: [...validAnswers(), { questionKey: 'muc-tieu', value: 'lần hai' }],
-      },
-      'answers.2.questionKey',
-    )
-  })
-
-  it('từ chối câu trả lời không phải văn bản', async () => {
-    for (const value of [123, true, { text: 'x' }, ['x']]) {
-      await expectRejected(
-        { worksheet: worksheet.id, answers: [{ questionKey: 'muc-tieu', value }] },
-        'answers.0.value',
-      )
-    }
-  })
-
-  it(`từ chối câu trả lời dài hơn ${ANSWER_MAX_LENGTH} ký tự`, async () => {
-    await expectRejected(
-      {
-        worksheet: worksheet.id,
-        answers: [{ questionKey: 'muc-tieu', value: 'a'.repeat(ANSWER_MAX_LENGTH + 1) }],
-      },
-      'answers.0.value',
-    )
-
+  it('trường không bắt buộc được bỏ trống', async () => {
     const response = await submit({
-      worksheet: worksheet.id,
-      answers: [{ questionKey: 'muc-tieu', value: 'a'.repeat(ANSWER_MAX_LENGTH) }],
+      templateCode: PHIEU_THEO_DOI_CA.code,
+      data: { tre: 'Trẻ', ngayCT: '2026-10-20' },
     })
     expect(response.status).toBe(201)
+    const { doc } = (await response.json()) as { doc: WorksheetSubmission }
+    expect(doc.data).toMatchObject({ tuGio: null, denGio: null, mucTieu: [] })
   })
 
-  it('từ chối answers không phải danh sách hoặc thiếu mã câu hỏi', async () => {
-    await expectRejected({ worksheet: worksheet.id, answers: 'không phải mảng' }, 'answers')
-    await expectRejected({ worksheet: worksheet.id, answers: [{ value: 'x' }] }, 'answers.0.questionKey')
+  it('ngày, giờ, tháng/năm sai định dạng bị từ chối', async () => {
+    await expectRejected({ ...caData(), ngayCT: '2026-02-30' }, 'values.ngayCT')
+    await expectRejected({ ...caData(), ngayCT: '20/10/2026' }, 'values.ngayCT')
+    await expectRejected({ ...caData(), tuGio: '25:00' }, 'values.tuGio')
+    await expectRejected({ ...amData(), thangNam: '2026-13' }, 'values.thangNam', PHIEU_AM_MUC_TIEU.code)
+    await expectRejected({ ...amData(), thangNam: '2026-' }, 'values.thangNam', PHIEU_AM_MUC_TIEU.code)
   })
 
-  it('từ chối khi thiếu worksheet hoặc worksheet không tồn tại', async () => {
-    await expectRejected({ answers: validAnswers() }, 'worksheet')
-    await expectRejected({ worksheet: 999999, answers: validAnswers() }, 'worksheet')
-    await expectRejected({ worksheet: 'abc', answers: validAnswers() }, 'worksheet')
+  it('số ngoài khoảng hoặc không phải số nguyên bị từ chối', async () => {
+    await expectRejected(
+      { ...caData(), mucTieu: [{ mucTieuCuThe: 'x', phanTramDung: '101' }] },
+      'values.mucTieu.0.phanTramDung',
+    )
+    await expectRejected(
+      { ...caData(), mucTieu: [{ mucTieuCuThe: 'x', phanTramDung: '12.5' }] },
+      'values.mucTieu.0.phanTramDung',
+    )
+    await expectRejected(
+      { ...amData(), buoi: [{}, { ngay: '32', phanTram: '10' }] },
+      'values.buoi.1.ngay',
+      PHIEU_AM_MUC_TIEU.code,
+    )
+    await expectRejected({ ...amData(), buoi: [{ ngay: 'abc' }] }, 'values.buoi.0.ngay', PHIEU_AM_MUC_TIEU.code)
+  })
+
+  it('văn bản quá dài hoặc sai kiểu bị từ chối', async () => {
+    await expectRejected({ ...caData(), tre: 'a'.repeat(201) }, 'values.tre')
+    await expectRejected({ ...caData(), tre: 123 }, 'values.tre')
+    await expectRejected({ ...caData(), mucTieu: [{ co1: 'quá-mười-ký-tự' }] }, 'values.mucTieu.0.co1')
+  })
+
+  it('bảng quá số dòng, sai kiểu, hoặc dữ liệu phiếu không phải object bị từ chối', async () => {
+    await expectRejected(
+      { ...caData(), mucTieu: Array.from({ length: 16 }, () => ({ mucTieuCuThe: 'x' })) },
+      'values.mucTieu',
+    )
+    await expectRejected({ ...caData(), mucTieu: 'không phải bảng' }, 'values.mucTieu')
+    await expectRejected({ ...amData(), buoi: Array.from({ length: 16 }, () => ({})) }, 'values.buoi', PHIEU_AM_MUC_TIEU.code)
+    await expectRejected('không phải object', 'values')
   })
 })
 
@@ -369,59 +370,34 @@ describe('Quyền đọc', () => {
   let submissionB: WorksheetSubmission
 
   beforeEach(async () => {
-    submissionA = await submitValid(tokenA, 'BAI-CUA-A')
-    submissionB = await submitValid(await loginToken(teacherB.email), 'BAI-CUA-B')
+    submissionA = await submitCa(tokenA, 'BAI-CUA-A')
+    submissionB = await submitCa(await loginToken(teacherB.email), 'BAI-CUA-B')
   })
 
-  it('Giáo viên chỉ thấy bài của mình trong danh sách (REST)', async () => {
-    const response = await rest(`/${SLUG}`, { token: tokenA })
-    expect(response.status).toBe(200)
-    const text = await response.text()
-
-    expect((JSON.parse(text) as { docs: WorksheetSubmission[] }).docs.map((doc) => doc.id)).toEqual([
-      submissionA.id,
-    ])
+  it('Giáo viên chỉ thấy bài của mình (danh sách, ?where, ID; REST, GraphQL, Local API)', async () => {
+    const list = await rest(`/${SLUG}`, { token: tokenA })
+    const text = await list.text()
+    expect((JSON.parse(text) as { docs: WorksheetSubmission[] }).docs.map((doc) => doc.id)).toEqual([submissionA.id])
     expect(text).not.toContain('BAI-CUA-B')
-  })
 
-  it('Giáo viên không lọc ra được bài của người khác bằng ?where', async () => {
-    const response = await rest(`/${SLUG}?where[teacher][equals]=${teacherB.id}`, { token: tokenA })
-    const text = await response.text()
-
-    expect((JSON.parse(text) as { docs: unknown[] }).docs).toEqual([])
-    expect(text).not.toContain('BAI-CUA-B')
-  })
-
-  it('Giáo viên A không đọc được bài của Giáo viên B bằng ID (REST, GraphQL, Local API)', async () => {
-    const own = await rest(`/${SLUG}/${submissionA.id}`, { token: tokenA })
-    expect(own.status).toBe(200)
+    const filtered = await rest(`/${SLUG}?where[teacher][equals]=${teacherB.id}`, { token: tokenA })
+    expect((JSON.parse(await filtered.text()) as { docs: unknown[] }).docs).toEqual([])
 
     const other = await rest(`/${SLUG}/${submissionB.id}`, { token: tokenA })
     expect(other.status).not.toBe(200)
     expect(await other.text()).not.toContain('BAI-CUA-B')
 
-    const response = await graphql(
-      `{ WorksheetSubmission(id: ${submissionB.id}) { id answers { value } } }`,
-      tokenA,
-    )
-    const text = await response.text()
-    expect(JSON.parse(text).data?.WorksheetSubmission ?? null).toBeNull()
-    expect(text).not.toContain('BAI-CUA-B')
+    const response = await graphql(`{ WorksheetSubmission(id: ${submissionB.id}) { id data } }`, tokenA)
+    const graphText = await response.text()
+    expect(JSON.parse(graphText).data?.WorksheetSubmission ?? null).toBeNull()
+    expect(graphText).not.toContain('BAI-CUA-B')
 
     await expect(
-      payload.findByID({
-        collection: SLUG,
-        id: submissionB.id,
-        overrideAccess: false,
-        user: asUser(teacherA),
-      }),
+      payload.findByID({ collection: SLUG, id: submissionB.id, overrideAccess: false, user: asUser(teacherA) }),
     ).rejects.toThrow()
-
-    const local = await payload.find({ collection: SLUG, overrideAccess: false, user: asUser(teacherA) })
-    expect(local.docs.map((doc) => doc.id)).toEqual([submissionA.id])
   })
 
-  it('Admin đọc được tất cả bài nộp, kể cả theo ID', async () => {
+  it('Admin đọc được bài của cả A và B', async () => {
     const token = await loginToken(admin.email)
 
     const list = await rest(`/${SLUG}`, { token })
@@ -431,36 +407,21 @@ describe('Quyền đọc', () => {
     const detail = await rest(`/${SLUG}/${submissionB.id}`, { token })
     expect(detail.status).toBe(200)
     expect(await detail.text()).toContain('BAI-CUA-B')
-
-    const response = await graphql(`{ WorksheetSubmissions { totalDocs } }`, token)
-    expect((await response.json()).data.WorksheetSubmissions.totalDocs).toBe(2)
-  })
-
-  it('Local API mặc định (overrideAccess: true) bỏ qua access control — chỉ dùng trong code server tin cậy', async () => {
-    const all = await payload.find({ collection: SLUG })
-    expect(all.totalDocs).toBe(2)
   })
 })
 
 describe('Người không có quyền', () => {
-  it('Giáo viên pending không tạo hay đọc được bài nộp', async () => {
+  it('Giáo viên pending không tạo hay đọc được, kể cả với token cũ', async () => {
     await expect(
       payload.create({
         collection: SLUG,
         overrideAccess: false,
         user: asUser(pendingTeacher),
-        data: { worksheet: worksheet.id, answers: validAnswers() } as never,
+        data: { templateCode: PHIEU_AM_MUC_TIEU.code, data: amData() } as never,
       }),
     ).rejects.toThrow()
 
-    await expect(
-      payload.find({ collection: SLUG, overrideAccess: false, user: asUser(pendingTeacher) }),
-    ).rejects.toThrow()
-  })
-
-  it('token cấp khi còn active mất quyền nộp và đọc ngay khi tài khoản chuyển sang pending', async () => {
-    const own = await submitValid()
-
+    const own = await submitCa()
     await payload.update({
       collection: 'users',
       id: teacherA.id,
@@ -469,83 +430,50 @@ describe('Người không có quyền', () => {
       user: asUser(admin),
     })
 
-    expect((await submit({ worksheet: worksheet.id, answers: validAnswers() })).status).toBe(403)
-
+    expect((await submit({ templateCode: PHIEU_THEO_DOI_CA.code, data: caData() })).status).toBe(403)
     for (const path of [`/${SLUG}`, `/${SLUG}/${own.id}`]) {
       const response = await rest(path, { token: tokenA })
       expect(response.status).toBe(403)
-      expect(await response.text()).not.toContain(SECRET_ANSWER)
+      expect(await response.text()).not.toContain(SECRET)
     }
-
     expect(await countSubmissions()).toBe(1)
   })
 
-  it('Học sinh / Phụ huynh và khách không tạo hay đọc được bài nộp', async () => {
-    const own = await submitValid()
+  it('Học sinh / Phụ huynh, khách và Admin không tạo được; học sinh và khách không đọc được', async () => {
+    const own = await submitCa()
     const studentToken = await loginToken(student.email)
 
-    for (const token of [studentToken, undefined]) {
-      // Gọi rest trực tiếp: submit(…, undefined) sẽ dùng token mặc định của Giáo viên A
+    for (const token of [studentToken, undefined, await loginToken(admin.email)]) {
       const created = await rest(`/${SLUG}`, {
         method: 'POST',
         token,
-        body: { worksheet: worksheet.id, answers: validAnswers() },
+        body: { templateCode: PHIEU_AM_MUC_TIEU.code, data: amData() },
       })
       expect(created.status).toBe(403)
+    }
 
+    for (const token of [studentToken, undefined]) {
       for (const path of [`/${SLUG}`, `/${SLUG}/${own.id}`]) {
         const response = await rest(path, { token })
         expect(response.status).toBe(403)
-        expect(await response.text()).not.toContain(SECRET_ANSWER)
+        expect(await response.text()).not.toContain(SECRET)
       }
     }
 
-    const response = await graphql(`{ WorksheetSubmissions { docs { id answers { value } } } }`)
-    const text = await response.text()
-    expect(JSON.parse(text).data?.WorksheetSubmissions ?? null).toBeNull()
-    expect(text).not.toContain(SECRET_ANSWER)
-
     expect(await countSubmissions()).toBe(1)
-  })
-
-  it('Admin không tạo được bài nộp (bài nộp luôn thuộc một Giáo viên)', async () => {
-    const response = await submit(
-      { worksheet: worksheet.id, answers: validAnswers() },
-      await loginToken(admin.email),
-    )
-    expect(response.status).toBe(403)
   })
 })
 
 describe('Không sửa/xóa được bài đã nộp', () => {
-  it('chủ bài và Admin đều không PATCH/DELETE được (REST, GraphQL)', async () => {
-    const own = await submitValid()
+  it('chủ bài và Admin đều không PATCH/DELETE được; Local API overrideAccess cũng không sửa được', async () => {
+    const own = await submitCa()
 
     for (const token of [tokenA, await loginToken(admin.email)]) {
-      const patched = await rest(`/${SLUG}/${own.id}`, {
-        method: 'PATCH',
-        token,
-        body: { answers: [{ questionKey: 'muc-tieu', value: 'ĐÃ SỬA' }] },
-      })
-      expect(patched.status).toBe(403)
-
-      const deleted = await rest(`/${SLUG}/${own.id}`, { method: 'DELETE', token })
-      expect(deleted.status).toBe(403)
-
-      const response = await graphql(
-        `mutation { deleteWorksheetSubmission(id: ${own.id}) { id } }`,
-        token,
-      )
-      expect((await response.json()).errors?.length).toBe(1)
+      expect(
+        (await rest(`/${SLUG}/${own.id}`, { method: 'PATCH', token, body: { data: { tre: 'ĐÃ SỬA' } } })).status,
+      ).toBe(403)
+      expect((await rest(`/${SLUG}/${own.id}`, { method: 'DELETE', token })).status).toBe(403)
     }
-
-    const saved = await payload.findByID({ collection: SLUG, id: own.id })
-    expect(JSON.stringify(saved.answers)).not.toContain('ĐÃ SỬA')
-    expect(await countSubmissions()).toBe(1)
-  })
-
-  it('kể cả Local API với overrideAccess: true cũng không sửa được bài nộp', async () => {
-    const own = await submitValid()
 
     await expect(
       payload.update({
@@ -553,101 +481,99 @@ describe('Không sửa/xóa được bài đã nộp', () => {
         id: own.id,
         overrideAccess: true,
         user: asUser(teacherA),
-        data: { answers: [{ questionKey: 'muc-tieu', value: 'ĐÃ SỬA' }] },
+        data: { data: { tre: 'ĐÃ SỬA' } },
       }),
     ).rejects.toThrow()
 
     const saved = await payload.findByID({ collection: SLUG, id: own.id })
-    expect(JSON.stringify(saved.answers)).not.toContain('ĐÃ SỬA')
+    expect(JSON.stringify(saved.data)).not.toContain('ĐÃ SỬA')
+    expect(await countSubmissions()).toBe(1)
   })
 })
 
-describe('Bảo vệ worksheet đã có bài nộp', () => {
-  it('Admin không xóa được worksheet đã có bài nộp (REST và Local API)', async () => {
-    await submitValid()
+describe('Bản chụp mẫu', () => {
+  it('đổi định nghĩa mẫu trong code không làm đổi bài đã nộp', async () => {
+    const doc = await submitCa()
+    const originalTitle = PHIEU_THEO_DOI_CA.title
 
-    const response = await rest(`/worksheets/${worksheet.id}`, {
-      method: 'DELETE',
-      token: await loginToken(admin.email),
-    })
-    expect(response.status).toBe(409)
+    try {
+      PHIEU_THEO_DOI_CA.title = 'Tiêu đề mẫu đã đổi'
+      PHIEU_THEO_DOI_CA.sections[0].title = 'Phần đã đổi'
 
-    await expect(
-      payload.delete({ collection: 'worksheets', id: worksheet.id, overrideAccess: true }),
-    ).rejects.toThrow()
-
-    expect(await payload.findByID({ collection: 'worksheets', id: worksheet.id })).toBeTruthy()
-    expect(await countSubmissions()).toBe(1)
+      const saved = await payload.findByID({ collection: SLUG, id: doc.id })
+      expect(saved.title).toBe(originalTitle)
+      expect(JSON.stringify(saved.templateSnapshot)).not.toContain('đã đổi')
+    } finally {
+      PHIEU_THEO_DOI_CA.title = originalTitle
+      PHIEU_THEO_DOI_CA.sections[0].title = 'Thông tin ca can thiệp'
+    }
   })
+})
 
-  it('worksheet chưa có bài nộp vẫn xóa được', async () => {
-    const response = await rest(`/worksheets/${worksheet.id}`, {
-      method: 'DELETE',
-      token: await loginToken(admin.email),
-    })
-    expect(response.status).toBe(200)
-  })
-
-  it('sửa worksheet không làm đổi bản chụp đề của bài nộp cũ; bài nộp mới dùng đề mới', async () => {
-    const old = await submitValid()
-
-    await payload.update({
+describe('Bài nộp kiểu cũ (worksheet do Admin soạn)', () => {
+  it('vẫn đọc được bài cũ với bản chụp câu hỏi và câu trả lời; worksheet của bài cũ không xóa được', async () => {
+    const worksheet = await payload.create({
       collection: 'worksheets',
-      id: worksheet.id,
-      overrideAccess: false,
-      user: asUser(admin),
+      overrideAccess: true,
+      data: { title: 'Worksheet cũ', questions: [{ key: 'cau-1', label: 'Câu hỏi cũ', required: true }] },
+    })
+
+    // Ghi thẳng vào database (bỏ qua hook, nên phải tự đặt id cho dòng mảng) để mô phỏng dữ liệu
+    // tạo trước khi đổi sang mẫu hệ thống
+    const legacy = await payload.db.create({
+      collection: SLUG,
       data: {
-        title: 'Tiêu đề mới',
-        instructions: 'Hướng dẫn mới',
-        questions: [
-          { key: 'muc-tieu', label: 'Nhãn mới', required: false },
-          { key: 'cau-moi', label: 'Câu mới', required: true },
-        ],
+        answers: [{ id: 'legacy-answer-1', questionKey: 'cau-1', value: `Câu trả lời cũ ${SECRET}` }],
+        submittedAt: '2026-10-20T08:00:00.000Z',
+        teacher: teacherA.id,
+        title: 'Worksheet cũ',
+        worksheet: worksheet.id,
+        worksheetSnapshot: {
+          title: 'Worksheet cũ',
+          instructions: 'Hướng dẫn cũ',
+          questions: [{ id: 'legacy-question-1', key: 'cau-1', label: 'Câu hỏi cũ', required: true }],
+        },
       },
     })
 
-    const oldSaved = await payload.findByID({ collection: SLUG, id: old.id })
-    expect(oldSaved.worksheetSnapshot).toMatchObject({
-      title: 'Worksheet mẫu',
-      instructions: 'Điền các ô bên dưới.',
-      questions: [
-        { key: 'muc-tieu', label: 'Câu bắt buộc', required: true },
-        { key: 'ghi-chu', label: 'Câu không bắt buộc', required: false },
-      ],
-    })
-    expect(oldSaved.answers?.map((answer) => answer.questionKey)).toEqual(['muc-tieu', 'ghi-chu'])
+    const response = await rest(`/${SLUG}/${legacy.id}`, { token: tokenA })
+    expect(response.status).toBe(200)
+    const doc = (await response.json()) as WorksheetSubmission
+    expect(doc.templateCode ?? null).toBeNull()
+    expect(doc.worksheetSnapshot?.title).toBe('Worksheet cũ')
+    expect(doc.worksheetSnapshot?.questions?.[0]).toMatchObject({ key: 'cau-1', label: 'Câu hỏi cũ', required: true })
+    expect(doc.answers?.[0]?.value).toBe(`Câu trả lời cũ ${SECRET}`)
 
-    // Câu "ghi-chu" đã bị xóa khỏi worksheet nên bài mới không được trả lời nó nữa
-    expect(
-      (await submit({ worksheet: worksheet.id, answers: validAnswers() })).status,
-    ).toBe(400)
+    // Giáo viên khác không đọc được bài cũ của A
+    const other = await rest(`/${SLUG}/${legacy.id}`, { token: await loginToken(teacherB.email) })
+    expect(other.status).not.toBe(200)
 
-    const response = await submit({
-      worksheet: worksheet.id,
-      answers: [{ questionKey: 'cau-moi', value: 'Trả lời câu mới' }],
-    })
-    expect(response.status).toBe(201)
-    const { doc } = (await response.json()) as { doc: WorksheetSubmission }
-    expect(doc.worksheetSnapshot.title).toBe('Tiêu đề mới')
-    expect(doc.worksheetSnapshot.questions.map((q) => q.key)).toEqual(['muc-tieu', 'cau-moi'])
+    const deleted = await rest(`/worksheets/${worksheet.id}`, { method: 'DELETE', token: await loginToken(admin.email) })
+    expect(deleted.status).toBe(409)
   })
 })
 
-describe('normalizeAnswers', () => {
-  const questions = [
-    { key: 'a', label: 'A', required: true },
-    { key: 'b', label: 'B', required: false },
-  ]
-
-  it('chấp nhận undefined khi không có câu bắt buộc', () => {
-    expect(normalizeAnswers(undefined, [questions[1]])).toEqual({ answers: [], errors: [] })
-  })
-
-  it('chuẩn hóa NFC và bỏ khoảng trắng đầu/cuối', () => {
+describe('normalizeTemplateValues', () => {
+  it('chuẩn hóa NFC, bỏ khoảng trắng, chuỗi trống → null', () => {
     const decomposed = 'Tiếng Việt'
-    const { answers, errors } = normalizeAnswers([{ questionKey: 'a', value: `  ${decomposed}  ` }], questions)
+    const { errors, values } = normalizeTemplateValues(PHIEU_AM_MUC_TIEU, {
+      ...amData(),
+      tenTre: `  ${decomposed}  `,
+      ghiChu: '   ',
+    })
 
     expect(errors).toEqual([])
-    expect(answers).toEqual([{ questionKey: 'a', value: decomposed.normalize('NFC') }])
+    expect(values.tenTre).toBe(decomposed.normalize('NFC'))
+    expect(values.ghiChu).toBeNull()
+  })
+
+  it('trả lỗi theo đường dẫn ô, giữ chỉ số dòng gửi lên', () => {
+    const { errors } = normalizeTemplateValues(PHIEU_THEO_DOI_CA, {
+      tre: 'x',
+      ngayCT: '2026-10-20',
+      mucTieu: [{}, { phanTramDung: '-1' }],
+    })
+
+    expect(errors.map((error) => error.path)).toEqual(['values.mucTieu.1.phanTramDung'])
   })
 })

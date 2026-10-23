@@ -1,100 +1,109 @@
 import type { Metadata } from 'next'
-import { ArrowRight, BookOpen } from 'lucide-react'
+import { ArrowRight, Clock, Plus } from 'lucide-react'
 import Link from 'next/link'
 import React from 'react'
 
-import { formatSoundLabel } from '@/collections/Lessons/sound'
 import { cn } from '@/utilities/ui'
 import { requireActiveTeacher } from '@/utilities/requireActiveTeacher'
+import { readSubtitle } from '@/worksheetTemplates/snapshot'
 
 import { EmptyState } from '../_components/EmptyState'
-import { Pagination } from '../_components/Pagination'
-import { cardClass, pageTitleClass, parsePage, pillClass, primaryButtonClass } from '../_components/teacherUi'
+import {
+  cardClass,
+  formatDateTime,
+  pageTitleClass,
+  pillClass,
+  primaryButtonClass,
+  secondaryButtonClass,
+} from '../_components/teacherUi'
 
 export const metadata: Metadata = {
   title: 'Phiếu',
 }
 
-const PAGE_SIZE = 12
+const RECENT_LIMIT = 5
 
-type Props = {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
-}
-
-export default async function WorksheetListPage({ searchParams }: Props) {
+export default async function WorksheetHomePage() {
   const { payload, user } = await requireActiveTeacher()
-  const page = parsePage((await searchParams).page)
 
-  const result = await payload.find({
-    collection: 'worksheets',
-    depth: 1,
-    limit: PAGE_SIZE,
+  // Vài phiếu nộp gần nhất của chính giáo viên (access control đã giới hạn theo người nộp)
+  const recent = await payload.find({
+    collection: 'worksheet-submissions',
+    depth: 0,
+    limit: RECENT_LIMIT,
     overrideAccess: false,
-    page,
     select: {
-      instructions: true,
-      lesson: true,
+      data: true,
+      submittedAt: true,
+      templateSnapshot: true,
       title: true,
+      worksheetSnapshot: { title: true },
     },
-    sort: '-createdAt',
+    sort: '-submittedAt',
     user,
+    where: { teacher: { equals: user.id } },
   })
 
   return (
     <main className="flex-1">
       <div className="lesson-container py-10 md:py-14">
         <p className={`${pillClass} mb-3`}>Giáo viên</p>
-        <h1 className={`${pageTitleClass} mb-8`}>Phiếu</h1>
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className={pageTitleClass}>Phiếu</h1>
+            <p className="mt-2 text-base font-semibold text-lesson-muted">
+              Bấm “Tạo phiếu” để chọn mẫu và điền phiếu mới.
+            </p>
+          </div>
+          <Link className={cn(primaryButtonClass, 'self-start sm:self-auto')} href="/giaovien/phieu/moi">
+            <Plus aria-hidden="true" className="size-5" strokeWidth={3} />
+            Tạo phiếu
+          </Link>
+        </div>
 
-        {result.docs.length === 0 ? (
-          result.totalDocs === 0 ? (
-            <EmptyState message="Chưa có phiếu nào." testId="worksheet-list-empty" />
-          ) : (
-            <EmptyState
-              action={{ href: '/giaovien/phieu', label: 'Về trang đầu' }}
-              message="Trang này không có phiếu."
-              testId="worksheet-list-empty"
-            />
-          )
+        <h2 className="mb-4 text-xl font-extrabold text-lesson-primary-dark">Phiếu nộp gần đây</h2>
+
+        {recent.docs.length === 0 ? (
+          <EmptyState message="Bạn chưa nộp phiếu nào." testId="recent-submissions-empty" />
         ) : (
-          <ul className="grid gap-5 md:grid-cols-2" data-testid="worksheet-list">
-            {result.docs.map((worksheet) => {
-              const lesson =
-                worksheet.lesson && typeof worksheet.lesson === 'object' ? worksheet.lesson : null
+          <>
+            <ul className="space-y-3" data-testid="recent-submissions">
+              {recent.docs.map((submission) => {
+                const title = submission.title ?? submission.worksheetSnapshot?.title ?? 'Phiếu'
+                const subtitle = readSubtitle(submission.templateSnapshot, submission.data)
 
-              return (
-                <li key={worksheet.id}>
-                  <article className={cn(cardClass, 'flex h-full flex-col gap-4 p-6')} data-testid="worksheet-card">
-                    <div className="flex-1">
-                      <h2 className="text-xl font-extrabold text-lesson-primary-dark">{worksheet.title}</h2>
-                      {lesson && (
-                        <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-bold text-lesson-primary">
-                          <BookOpen aria-hidden="true" className="size-4" strokeWidth={2.5} />
-                          Bài học: {formatSoundLabel(lesson.sound)}
-                        </p>
-                      )}
-                      {worksheet.instructions && (
-                        <p className="mt-3 line-clamp-2 text-base font-semibold text-lesson-muted">
-                          {worksheet.instructions}
-                        </p>
-                      )}
-                    </div>
+                return (
+                  <li key={submission.id}>
                     <Link
-                      aria-label={`Mở phiếu ${worksheet.title}`}
-                      className={cn(primaryButtonClass, 'self-start')}
-                      href={`/giaovien/phieu/${worksheet.id}`}
+                      className={cn(
+                        cardClass,
+                        'flex items-center justify-between gap-4 p-4 transition hover:border-lesson-primary/40 focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-lesson-primary-dark sm:p-5',
+                      )}
+                      href={`/giaovien/bai-da-nop/${submission.id}`}
                     >
-                      Mở phiếu
-                      <ArrowRight aria-hidden="true" className="size-5" strokeWidth={2.75} />
+                      <span>
+                        <span className="block font-extrabold text-lesson-primary-dark">{title}</span>
+                        <span className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm font-bold text-lesson-muted">
+                          {subtitle && <span>{subtitle}</span>}
+                          <span className="inline-flex items-center gap-1.5">
+                            <Clock aria-hidden="true" className="size-4" strokeWidth={2.5} />
+                            <time dateTime={submission.submittedAt}>{formatDateTime(submission.submittedAt)}</time>
+                          </span>
+                        </span>
+                      </span>
+                      <ArrowRight aria-hidden="true" className="size-5 shrink-0 text-lesson-primary" strokeWidth={2.75} />
                     </Link>
-                  </article>
-                </li>
-              )
-            })}
-          </ul>
+                  </li>
+                )
+              })}
+            </ul>
+            {recent.totalDocs > RECENT_LIMIT && (
+              <Link className={cn(secondaryButtonClass, 'mt-5')} href="/giaovien/bai-da-nop">
+                Xem tất cả bài đã nộp
+              </Link>
+            )}
+          </>
         )}
-
-        <Pagination basePath="/giaovien/phieu" page={page} totalPages={result.totalPages} />
       </div>
     </main>
   )

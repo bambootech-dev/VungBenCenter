@@ -4,8 +4,6 @@ import config from '@payload-config'
 import { headers as getHeaders } from 'next/headers'
 import { APIError, getPayload, ValidationError } from 'payload'
 
-import { ANSWER_MAX_LENGTH } from '@/collections/WorksheetSubmissions/answers'
-
 export type SubmitWorksheetResult =
   | { ok: true; id: number }
   | {
@@ -14,33 +12,21 @@ export type SubmitWorksheetResult =
       // invalid: dữ liệu bị server từ chối; error: lỗi khác
       reason: 'error' | 'forbidden' | 'invalid' | 'unauthenticated'
       message: string
-      // Lỗi theo mã câu hỏi (questionKey), để form gắn đúng ô nhập
+      // Lỗi theo đường dẫn ô nhập: `values.<key>` hoặc `values.<bảng>.<dòng>.<cột>`
       fieldErrors?: Record<string, string>
     }
 
-const CHANGED_MESSAGE =
-  'Phiếu vừa được cập nhật hoặc không còn tồn tại. Hãy sao chép câu trả lời, tải lại trang rồi nộp lại.'
-
 const GENERIC_ERROR = 'Chưa nộp được phiếu. Vui lòng thử lại sau ít phút.'
-
-// Tham số Server Action do client gửi lên nên không tin vào kiểu dữ liệu
-const pickAnswers = (value: unknown): unknown =>
-  Array.isArray(value)
-    ? value.map((item: unknown) => {
-        const answer = (item ?? {}) as { questionKey?: unknown; value?: unknown }
-
-        return { questionKey: answer.questionKey, value: answer.value }
-      })
-    : value
+const FORBIDDEN_MESSAGE = 'Tài khoản của bạn hiện không được nộp phiếu. Vui lòng liên hệ Quản trị viên.'
 
 /**
- * Giáo viên nộp phiếu. Server Action gọi được bằng POST trực tiếp, nên luôn tự xác thực:
- * user lấy từ cookie phiên, Local API chạy với `overrideAccess: false` để áp dụng access
- * control của collection. Giáo viên, thời gian nộp và bản chụp đề do hook của collection đặt.
+ * Giáo viên nộp phiếu theo mẫu hệ thống. Server Action gọi được bằng POST trực tiếp, nên luôn tự
+ * xác thực: user lấy từ cookie phiên, Local API chạy với `overrideAccess: false` để áp dụng access
+ * control của collection. Giáo viên, thời gian nộp và bản chụp mẫu do hook của collection đặt.
  */
 export async function submitWorksheet(input: {
-  answers: unknown
-  worksheetId: unknown
+  templateCode: unknown
+  values: unknown
 }): Promise<SubmitWorksheetResult> {
   const payload = await getPayload({ config })
   const { user } = await payload.auth({ headers: await getHeaders(), canSetHeaders: false })
@@ -54,25 +40,14 @@ export async function submitWorksheet(input: {
   }
 
   if (user.role !== 'giaovien' || user.accountStatus !== 'active') {
-    return {
-      ok: false,
-      reason: 'forbidden',
-      message: 'Tài khoản của bạn hiện không được nộp phiếu. Vui lòng liên hệ Quản trị viên.',
-    }
-  }
-
-  const worksheetId = input?.worksheetId
-  const answers = pickAnswers(input?.answers)
-
-  if (typeof worksheetId !== 'number' || !Number.isInteger(worksheetId)) {
-    return { ok: false, reason: 'invalid', message: CHANGED_MESSAGE }
+    return { ok: false, reason: 'forbidden', message: FORBIDDEN_MESSAGE }
   }
 
   try {
     const doc = await payload.create({
       collection: 'worksheet-submissions',
       // Chỉ hai field client được gửi; hook bỏ mọi field khác
-      data: { answers, worksheet: worksheetId } as never,
+      data: { data: input?.values, templateCode: input?.templateCode } as never,
       depth: 0,
       overrideAccess: false,
       user,
@@ -82,44 +57,26 @@ export async function submitWorksheet(input: {
   } catch (error) {
     if (error instanceof ValidationError) {
       const fieldErrors: Record<string, string> = {}
-      let changed = false
-      let missingRequired = false
 
-      for (const { path } of error.data.errors) {
-        const match = /^answers\.(\d+)\.value$/.exec(path)
-        const key = match && Array.isArray(answers) ? (answers[Number(match[1])] as { questionKey?: unknown }).questionKey : null
-
-        if (typeof key === 'string') {
-          fieldErrors[key] = `Câu trả lời không hợp lệ hoặc dài quá ${ANSWER_MAX_LENGTH} ký tự.`
-        } else if (path === 'answers') {
-          missingRequired = true
-        } else {
-          // worksheet không còn / mã câu hỏi không còn thuộc phiếu
-          changed = true
-        }
+      for (const { message, path } of error.data.errors) {
+        fieldErrors[path] = message
       }
 
       return {
         ok: false,
         reason: 'invalid',
         fieldErrors,
-        message: changed
-          ? CHANGED_MESSAGE
-          : missingRequired
-            ? 'Còn câu bắt buộc chưa trả lời. Nếu bạn đã trả lời đủ, phiếu có thể vừa được cập nhật — hãy tải lại trang.'
-            : 'Vui lòng kiểm tra lại các câu được đánh dấu.',
+        message: fieldErrors.templateCode
+          ? 'Mẫu phiếu không còn tồn tại. Hãy sao chép nội dung, tải lại trang rồi thử lại.'
+          : 'Vui lòng kiểm tra lại các ô được đánh dấu.',
       }
     }
 
     if (error instanceof APIError && error.status === 403) {
-      return {
-        ok: false,
-        reason: 'forbidden',
-        message: 'Tài khoản của bạn hiện không được nộp phiếu. Vui lòng liên hệ Quản trị viên.',
-      }
+      return { ok: false, reason: 'forbidden', message: FORBIDDEN_MESSAGE }
     }
 
-    payload.logger.error({ err: error, userId: user.id, worksheetId }, 'submitWorksheet failed')
+    payload.logger.error({ err: error, userId: user.id }, 'submitWorksheet failed')
 
     return { ok: false, reason: 'error', message: GENERIC_ERROR }
   }
