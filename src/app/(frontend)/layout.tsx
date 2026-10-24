@@ -1,32 +1,41 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 
-import { cn } from '@/utilities/ui'
-import { GeistMono } from 'geist/font/mono'
-import { GeistSans } from 'geist/font/sans'
+import Box from '@mui/material/Box'
+import { AppRouterCacheProvider } from '@mui/material-nextjs/v16-appRouter'
 import React from 'react'
 
 import { SiteFooter } from '@/components/SiteFooter'
 import { SiteHeader } from '@/components/SiteHeader'
+import { SkipLink, MAIN_CONTENT_ID } from '@/components/SkipLink'
+import { roboto } from '@/theme/fonts'
+import { ThemeProvider } from '@/theme/ThemeProvider'
 import { getServerSideURL } from '@/utilities/getURL'
-
-import { lessonFont } from './bai-hoc/_components/lessonFont'
-
-import './globals.css'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html className={cn(GeistSans.variable, GeistMono.variable)} lang="vi">
+    <html className={roboto.variable} lang="vi">
       <head>
         <link href="/favicon.svg" rel="icon" type="image/svg+xml" />
       </head>
-      {/* Nền xanh nhạt và font Nunito của trang /bai-hoc cho mọi trang */}
-      <body className={cn(lessonFont.className, 'lesson-page')}>
-        <SiteHeader />
-        {children}
-        <SiteFooter />
+      <body>
+        <AppRouterCacheProvider>
+          <ThemeProvider>
+            <SkipLink />
+            <SiteHeader />
+            {/* Mỗi trang chỉ dựng nội dung; khung <main> dùng chung đặt ở đây */}
+            <Box component="main" id={MAIN_CONTENT_ID} sx={{ display: 'flex', flex: 1, flexDirection: 'column', '&:focus': { outline: 'none' } }} tabIndex={-1}>
+              {children}
+            </Box>
+            <SiteFooter />
+          </ThemeProvider>
+        </AppRouterCacheProvider>
       </body>
     </html>
   )
+}
+
+export const viewport: Viewport = {
+  themeColor: '#f6fbf3',
 }
 
 export const metadata: Metadata = {

@@ -3,15 +3,15 @@
 import { useRouter } from 'next/navigation'
 import { FormEvent, useState } from 'react'
 
-import {
-  cardClass,
-  errorAlertClass,
-  inputClass,
-  labelClass,
-  pageTitleClass,
-  pillClass,
-  primaryButtonClass,
-} from '@/components/ui/brand'
+import LoginRounded from '@mui/icons-material/LoginRounded'
+import Alert from '@mui/material/Alert'
+import Button from '@mui/material/Button'
+import CircularProgress from '@mui/material/CircularProgress'
+import Stack from '@mui/material/Stack'
+import TextField from '@mui/material/TextField'
+
+import { AuthCard } from '@/components/AuthCard'
+import { PasswordField } from '@/components/PasswordField'
 
 type LoginRole = 'giaovien' | 'hocsinh'
 
@@ -93,53 +93,48 @@ export function RoleLogin({
   }
 
   return (
-    <main className="flex flex-1 items-center justify-center px-4 py-12 md:py-20">
-      <form className={`${cardClass} w-full max-w-md p-6 sm:p-8`} onSubmit={handleSubmit}>
-        <p className={`${pillClass} mb-3`}>Vững Bền Center</p>
-        <h1 className={`${pageTitleClass} mb-6`}>{title}</h1>
+    <AuthCard description="Nhập email và mật khẩu của bạn để tiếp tục." icon={<LoginRounded />} title={title}>
+      <form onSubmit={handleSubmit}>
+        <Stack spacing={2.5}>
+        <TextField
+          autoComplete="email"
+          fullWidth
+          id={`${role}-login-email`}
+          label="Email"
+          onChange={(event) => setEmail(event.target.value)}
+          required
+          type="email"
+          value={email}
+        />
 
-        <div className="space-y-5">
-          <div>
-            <label className={labelClass} htmlFor={`${role}-login-email`}>
-              Email
-            </label>
-            <input
-              autoComplete="email"
-              className={inputClass}
-              id={`${role}-login-email`}
-              onChange={(event) => setEmail(event.target.value)}
-              required
-              type="email"
-              value={email}
-            />
-          </div>
+        <PasswordField
+          autoComplete="current-password"
+          fullWidth
+          id={`${role}-login-password`}
+          label="Mật khẩu"
+          onChange={(event) => setPassword(event.target.value)}
+          required
+          value={password}
+        />
 
-          <div>
-            <label className={labelClass} htmlFor={`${role}-login-password`}>
-              Mật khẩu
-            </label>
-            <input
-              autoComplete="current-password"
-              className={inputClass}
-              id={`${role}-login-password`}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-              type="password"
-              value={password}
-            />
-          </div>
+        {error && (
+          <Alert role="alert" severity="error">
+            {error}
+          </Alert>
+        )}
 
-          {error && (
-            <p className={errorAlertClass} role="alert">
-              {error}
-            </p>
-          )}
-
-          <button className={`${primaryButtonClass} w-full`} disabled={loading} type="submit">
-            {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
-          </button>
-        </div>
+        <Button
+          disabled={loading}
+          fullWidth
+          size="large"
+          startIcon={loading ? <CircularProgress color="inherit" size={18} /> : undefined}
+          type="submit"
+          variant="contained"
+        >
+          {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+        </Button>
+        </Stack>
       </form>
-    </main>
+    </AuthCard>
   )
 }

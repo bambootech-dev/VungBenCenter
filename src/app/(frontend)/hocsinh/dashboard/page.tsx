@@ -3,7 +3,12 @@ import { headers as getHeaders } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
-import { cardClass, pageTitleClass, pillClass } from '@/components/ui/brand'
+import AutoStoriesRounded from '@mui/icons-material/AutoStoriesRounded'
+import Box from '@mui/material/Box'
+import Container from '@mui/material/Container'
+
+import { PageHeader } from '@/components/PageHeader'
+import { QuickLinkCard } from '@/components/QuickLinkCard'
 
 export default async function HocSinhDashboardPage() {
   const payload = await getPayload({ config })
@@ -27,15 +32,21 @@ export default async function HocSinhDashboardPage() {
   }
 
   return (
-    <main className="flex-1">
-      <div className="lesson-container py-10 md:py-14">
-        <p className={`${pillClass} mb-3`}>Vững Bền Center</p>
-        <h1 className={`${pageTitleClass} mb-6`}>Trang Học sinh / Phụ huynh</h1>
+    <Container maxWidth="lg" sx={{ py: { xs: 5, md: 8 } }}>
+      <PageHeader
+        description="Chọn một mục bên dưới để bắt đầu."
+        eyebrow="Trang Học sinh / Phụ huynh"
+        title={`Xin chào ${user.name || user.email}`}
+      />
 
-        <p className={`${cardClass} p-6 text-lg font-bold text-lesson-primary-dark`}>
-          Xin chào {user.name || user.email}
-        </p>
-      </div>
-    </main>
+      <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' } }}>
+        <QuickLinkCard
+          description="Luyện phát âm từng bước với các bài học của trung tâm."
+          href="/bai-hoc"
+          icon={<AutoStoriesRounded fontSize="inherit" />}
+          title="Bài học"
+        />
+      </Box>
+    </Container>
   )
 }

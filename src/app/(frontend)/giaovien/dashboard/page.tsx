@@ -3,7 +3,13 @@ import { headers as getHeaders } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
-import { cardClass, pageTitleClass, pillClass } from '@/components/ui/brand'
+import AssignmentRounded from '@mui/icons-material/AssignmentRounded'
+import FactCheckRounded from '@mui/icons-material/FactCheckRounded'
+import NoteAddRounded from '@mui/icons-material/NoteAddRounded'
+import Box from '@mui/material/Box'
+
+import { PageHeader } from '@/components/PageHeader'
+import { QuickLinkCard } from '@/components/QuickLinkCard'
 
 export default async function GiaoVienDashboardPage() {
   const payload = await getPayload({ config })
@@ -27,15 +33,33 @@ export default async function GiaoVienDashboardPage() {
   }
 
   return (
-    <main className="flex-1">
-      <div className="lesson-container py-10 md:py-14">
-        <p className={`${pillClass} mb-3`}>Vững Bền Center</p>
-        <h1 className={`${pageTitleClass} mb-6`}>Trang Giáo viên</h1>
+    <>
+      <PageHeader
+        description="Tạo phiếu theo mẫu và xem lại các bài bạn đã nộp."
+        eyebrow="Trang Giáo viên"
+        title={`Xin chào ${user.name || user.email}`}
+      />
 
-        <p className={`${cardClass} p-6 text-lg font-bold text-lesson-primary-dark`}>
-          Xin chào {user.name || user.email}
-        </p>
-      </div>
-    </main>
+      <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', lg: 'repeat(3, 1fr)' } }}>
+        <QuickLinkCard
+          description="Chọn mẫu có sẵn và điền phiếu mới."
+          href="/giaovien/phieu/moi"
+          icon={<NoteAddRounded fontSize="inherit" />}
+          title="Tạo phiếu mới"
+        />
+        <QuickLinkCard
+          description="Danh sách phiếu và các phiếu nộp gần đây."
+          href="/giaovien/phieu"
+          icon={<AssignmentRounded fontSize="inherit" />}
+          title="Danh sách phiếu"
+        />
+        <QuickLinkCard
+          description="Xem chi tiết từng phiếu đã nộp."
+          href="/giaovien/bai-da-nop"
+          icon={<FactCheckRounded fontSize="inherit" />}
+          title="Bài đã nộp"
+        />
+      </Box>
+    </>
   )
 }

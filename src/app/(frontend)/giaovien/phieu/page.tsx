@@ -1,21 +1,16 @@
 import type { Metadata } from 'next'
-import { ArrowRight, Clock, Plus } from 'lucide-react'
-import Link from 'next/link'
+import AddRounded from '@mui/icons-material/AddRounded'
+import Button from '@mui/material/Button'
+import Stack from '@mui/material/Stack'
+import Typography from '@mui/material/Typography'
 import React from 'react'
 
-import { cn } from '@/utilities/ui'
+import { EmptyState } from '@/components/EmptyState'
+import { PageHeader } from '@/components/PageHeader'
 import { requireActiveTeacher } from '@/utilities/requireActiveTeacher'
 import { readSubtitle } from '@/worksheetTemplates/snapshot'
 
-import { EmptyState } from '../_components/EmptyState'
-import {
-  cardClass,
-  formatDateTime,
-  pageTitleClass,
-  pillClass,
-  primaryButtonClass,
-  secondaryButtonClass,
-} from '../_components/teacherUi'
+import { SubmissionCard } from '../_components/SubmissionCard'
 
 export const metadata: Metadata = {
   title: 'Phiếu',
@@ -45,66 +40,45 @@ export default async function WorksheetHomePage() {
   })
 
   return (
-    <main className="flex-1">
-      <div className="lesson-container py-10 md:py-14">
-        <p className={`${pillClass} mb-3`}>Giáo viên</p>
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className={pageTitleClass}>Phiếu</h1>
-            <p className="mt-2 text-base font-semibold text-lesson-muted">
-              Bấm “Tạo phiếu” để chọn mẫu và điền phiếu mới.
-            </p>
-          </div>
-          <Link className={cn(primaryButtonClass, 'self-start sm:self-auto')} href="/giaovien/phieu/moi">
-            <Plus aria-hidden="true" className="size-5" strokeWidth={3} />
+    <>
+      <PageHeader
+        actions={
+          <Button href="/giaovien/phieu/moi" size="large" startIcon={<AddRounded />} variant="contained">
             Tạo phiếu
-          </Link>
-        </div>
+          </Button>
+        }
+        description="Bấm “Tạo phiếu” để chọn mẫu và điền phiếu mới."
+        eyebrow="Giáo viên"
+        title="Phiếu"
+      />
 
-        <h2 className="mb-4 text-xl font-extrabold text-lesson-primary-dark">Phiếu nộp gần đây</h2>
+      <Typography component="h2" sx={{ mb: 2 }} variant="h5">
+        Phiếu nộp gần đây
+      </Typography>
 
-        {recent.docs.length === 0 ? (
-          <EmptyState message="Bạn chưa nộp phiếu nào." testId="recent-submissions-empty" />
-        ) : (
-          <>
-            <ul className="space-y-3" data-testid="recent-submissions">
-              {recent.docs.map((submission) => {
-                const title = submission.title ?? submission.worksheetSnapshot?.title ?? 'Phiếu'
-                const subtitle = readSubtitle(submission.templateSnapshot, submission.data)
-
-                return (
-                  <li key={submission.id}>
-                    <Link
-                      className={cn(
-                        cardClass,
-                        'flex items-center justify-between gap-4 p-4 transition hover:border-lesson-primary/40 focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-lesson-primary-dark sm:p-5',
-                      )}
-                      href={`/giaovien/bai-da-nop/${submission.id}`}
-                    >
-                      <span>
-                        <span className="block font-extrabold text-lesson-primary-dark">{title}</span>
-                        <span className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm font-bold text-lesson-muted">
-                          {subtitle && <span>{subtitle}</span>}
-                          <span className="inline-flex items-center gap-1.5">
-                            <Clock aria-hidden="true" className="size-4" strokeWidth={2.5} />
-                            <time dateTime={submission.submittedAt}>{formatDateTime(submission.submittedAt)}</time>
-                          </span>
-                        </span>
-                      </span>
-                      <ArrowRight aria-hidden="true" className="size-5 shrink-0 text-lesson-primary" strokeWidth={2.75} />
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
-            {recent.totalDocs > RECENT_LIMIT && (
-              <Link className={cn(secondaryButtonClass, 'mt-5')} href="/giaovien/bai-da-nop">
-                Xem tất cả bài đã nộp
-              </Link>
-            )}
-          </>
-        )}
-      </div>
-    </main>
+      {recent.docs.length === 0 ? (
+        <EmptyState message="Bạn chưa nộp phiếu nào." testId="recent-submissions-empty" />
+      ) : (
+        <>
+          <Stack component="ul" data-testid="recent-submissions" spacing={1} sx={{ listStyle: 'none', m: 0, p: 0 }}>
+            {recent.docs.map((submission) => (
+              <li key={submission.id}>
+                <SubmissionCard
+                  id={submission.id}
+                  submittedAt={submission.submittedAt}
+                  subtitle={readSubtitle(submission.templateSnapshot, submission.data)}
+                  title={submission.title ?? submission.worksheetSnapshot?.title ?? 'Phiếu'}
+                />
+              </li>
+            ))}
+          </Stack>
+          {recent.totalDocs > RECENT_LIMIT && (
+            <Button href="/giaovien/bai-da-nop" sx={{ mt: 3 }} variant="tonal">
+              Xem tất cả bài đã nộp
+            </Button>
+          )}
+        </>
+      )}
+    </>
   )
 }

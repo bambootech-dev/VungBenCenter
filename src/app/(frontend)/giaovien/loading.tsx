@@ -1,17 +1,20 @@
+import Box from '@mui/material/Box'
+import Skeleton from '@mui/material/Skeleton'
+import { visuallyHidden } from '@mui/utils'
 import React from 'react'
 
 export default function Loading() {
   return (
-    <main className="flex-1">
-      <div className="lesson-container py-10 md:py-14" role="status">
-        <p className="sr-only">Đang tải…</p>
-        <div aria-hidden="true" className="animate-pulse space-y-5 motion-reduce:animate-none">
-          <div className="h-9 w-64 rounded-full bg-lesson-primary-soft" />
-          {[0, 1, 2].map((index) => (
-            <div className="h-28 rounded-[1.375rem] border-2 border-lesson-border bg-lesson-surface" key={index} />
-          ))}
-        </div>
-      </div>
-    </main>
+    <Box role="status">
+      <Box component="span" sx={visuallyHidden}>
+        Đang tải…
+      </Box>
+      <Box aria-hidden="true" sx={{ display: 'grid', gap: 2.5 }}>
+        <Skeleton height={40} sx={{ borderRadius: 2 }} variant="rounded" width={260} />
+        {[0, 1, 2].map((index) => (
+          <Skeleton height={88} key={index} sx={{ borderRadius: 3 }} variant="rounded" />
+        ))}
+      </Box>
+    </Box>
   )
 }

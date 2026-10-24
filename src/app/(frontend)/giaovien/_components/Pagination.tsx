@@ -1,10 +1,9 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import Link from 'next/link'
+import ChevronLeftRounded from '@mui/icons-material/ChevronLeftRounded'
+import ChevronRightRounded from '@mui/icons-material/ChevronRightRounded'
+import Button from '@mui/material/Button'
+import Stack from '@mui/material/Stack'
+import Typography from '@mui/material/Typography'
 import React from 'react'
-
-import { cn } from '@/utilities/ui'
-
-import { secondaryButtonClass } from './teacherUi'
 
 type Props = {
   basePath: string
@@ -14,40 +13,35 @@ type Props = {
 
 const pageHref = (basePath: string, page: number) => (page > 1 ? `${basePath}?page=${page}` : basePath)
 
+// Phân trang bằng liên kết (server render theo ?page=), không cần JavaScript phía client
 export const Pagination = ({ basePath, page, totalPages }: Props) => {
   if (totalPages <= 1) return null
 
-  const disabled = 'pointer-events-none opacity-45'
-
   return (
-    <nav aria-label="Phân trang" className="mt-8 flex items-center justify-between gap-3">
+    <Stack aria-label="Phân trang" component="nav" direction="row" spacing={2} sx={{ alignItems: 'center', justifyContent: 'space-between', mt: 4 }}>
       {page > 1 ? (
-        <Link className={secondaryButtonClass} href={pageHref(basePath, page - 1)}>
-          <ChevronLeft aria-hidden="true" className="size-5" strokeWidth={2.75} />
+        <Button href={pageHref(basePath, page - 1)} startIcon={<ChevronLeftRounded />} variant="outlined">
           Trang trước
-        </Link>
+        </Button>
       ) : (
-        <span aria-disabled="true" className={cn(secondaryButtonClass, disabled)}>
-          <ChevronLeft aria-hidden="true" className="size-5" strokeWidth={2.75} />
+        <Button component="span" disabled startIcon={<ChevronLeftRounded />} variant="outlined">
           Trang trước
-        </span>
+        </Button>
       )}
 
-      <p className="text-base font-bold text-lesson-muted">
+      <Typography color="text.secondary" variant="body2">
         Trang {Math.min(page, totalPages)} / {totalPages}
-      </p>
+      </Typography>
 
       {page < totalPages ? (
-        <Link className={secondaryButtonClass} href={pageHref(basePath, page + 1)}>
+        <Button endIcon={<ChevronRightRounded />} href={pageHref(basePath, page + 1)} variant="outlined">
           Trang sau
-          <ChevronRight aria-hidden="true" className="size-5" strokeWidth={2.75} />
-        </Link>
+        </Button>
       ) : (
-        <span aria-disabled="true" className={cn(secondaryButtonClass, disabled)}>
+        <Button component="span" disabled endIcon={<ChevronRightRounded />} variant="outlined">
           Trang sau
-          <ChevronRight aria-hidden="true" className="size-5" strokeWidth={2.75} />
-        </span>
+        </Button>
       )}
-    </nav>
+    </Stack>
   )
 }

@@ -1,17 +1,23 @@
 import type { Metadata } from 'next'
 import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical'
 import { RichText } from '@payloadcms/richtext-lexical/react'
-import { ArrowLeft, ArrowRight, ChevronLeft } from 'lucide-react'
-import Link from 'next/link'
+import ArrowBackRounded from '@mui/icons-material/ArrowBackRounded'
+import ArrowForwardRounded from '@mui/icons-material/ArrowForwardRounded'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import Chip from '@mui/material/Chip'
+import Container from '@mui/material/Container'
+import Paper from '@mui/material/Paper'
+import Stack from '@mui/material/Stack'
+import type { SxProps, Theme } from '@mui/material/styles'
+import Typography from '@mui/material/Typography'
 import { notFound } from 'next/navigation'
 import React from 'react'
 
 import { formatSoundLabel } from '@/collections/Lessons/sound'
 import { LESSON_STEP_COUNT, LESSON_STEP_KEYS, parseLessonStep } from '@/collections/Lessons/steps'
-import { cn } from '@/utilities/ui'
+import { PageHeader } from '@/components/PageHeader'
 import { requireActiveUser } from '@/utilities/requireActiveUser'
-
-import { lessonFont } from '../_components/lessonFont'
 
 type Props = {
   params: Promise<{ id: string }>
@@ -24,8 +30,27 @@ export const metadata: Metadata = {
 
 const stepHref = (lessonId: number, step: number) => `/bai-hoc/${lessonId}?step=${step}`
 
-const focusRing =
-  'focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-lesson-primary-dark'
+// Rich Text của từng bước: chữ lớn, dễ đọc cho trẻ nhỏ
+const proseSx: SxProps<Theme> = {
+  color: 'text.primary',
+  fontSize: { xs: '1.125rem', md: '1.25rem' },
+  lineHeight: 1.7,
+  overflowWrap: 'anywhere',
+  '& > * + *': { mt: 2 },
+  '& h1, & h2, & h3, & h4': { color: 'primary.main', fontWeight: 500, lineHeight: 1.25 },
+  '& h1': { fontSize: { xs: '1.875rem', md: '2.25rem' } },
+  '& h2': { fontSize: { xs: '1.5rem', md: '1.875rem' } },
+  '& h3': { fontSize: { xs: '1.25rem', md: '1.5rem' } },
+  '& h4': { fontSize: '1.25rem' },
+  '& ul, & ol': { pl: 3.5 },
+  '& li + li': { mt: 0.75 },
+  '& li::marker': { color: 'primary.main', fontWeight: 500 },
+  '& a': { color: 'primary.main', fontWeight: 500, textUnderlineOffset: '3px' },
+  '& a:focus-visible': { borderRadius: 1, outline: '3px solid', outlineColor: 'secondary.main', outlineOffset: 2 },
+  '& strong': { fontWeight: 700 },
+  '& blockquote': { bgcolor: 'm3.surfaceContainer', borderRadius: 3, color: 'text.secondary', m: 0, px: 2.5, py: 1.5 },
+  '& img': { borderRadius: 4, height: 'auto', maxWidth: '100%' },
+}
 
 export default async function LessonPage({ params, searchParams }: Props) {
   const { payload, user } = await requireActiveUser()
@@ -62,100 +87,93 @@ export default async function LessonPage({ params, searchParams }: Props) {
   const hasContent = Boolean(content?.root?.children?.length)
 
   return (
-    <main className={cn(lessonFont.className, 'lesson-page flex-1')}>
-      <div className="lesson-container py-6 md:py-10">
-        <div className="mx-auto max-w-5xl">
-          <Link
-            className={cn(
-              'mb-5 inline-flex min-h-11 items-center gap-1 rounded-full pr-3 text-base font-bold text-lesson-primary-dark hover:underline',
-              focusRing,
-            )}
-            href="/bai-hoc"
+    <Container maxWidth="md" sx={{ py: { xs: 4, md: 6 } }}>
+      <PageHeader back={{ href: '/bai-hoc', label: 'Danh sách bài học' }} eyebrow="Luyện phát âm" title={formatSoundLabel(lesson.sound)}>
+        <Paper aria-label="Các bước" component="nav" elevation={0} sx={{ bgcolor: 'm3.surfaceContainer', borderRadius: 7, display: 'inline-block', mt: 3, p: 1, maxWidth: '100%' }}>
+          {/* Mobile: lưới 5 cột (5 + 4), mỗi nút vẫn ≥ 44px; từ sm trở lên: một hàng */}
+          <Box
+            component="ol"
+            sx={{
+              display: { xs: 'grid', sm: 'flex' },
+              gap: { xs: 0.75, sm: 1 },
+              gridTemplateColumns: 'repeat(5, 1fr)',
+              justifyItems: 'center',
+              listStyle: 'none',
+              m: 0,
+              p: 0,
+            }}
           >
-            <ChevronLeft aria-hidden="true" className="size-5" />
-            Danh sách bài học
-          </Link>
+            {LESSON_STEP_KEYS.map((key, index) => {
+              const number = index + 1
+              const isCurrent = number === step
 
-          <div className="mb-6 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="mb-2 inline-flex rounded-full bg-lesson-primary-soft px-4 py-1.5 text-sm font-bold text-lesson-primary-dark">
-                Luyện phát âm
-              </p>
-              <h1 className="text-4xl font-extrabold tracking-tight text-lesson-primary-dark md:text-5xl">
-                {formatSoundLabel(lesson.sound)}
-              </h1>
-            </div>
+              return (
+                <li key={key}>
+                  <Button
+                    aria-current={isCurrent ? 'step' : undefined}
+                    aria-label={`Bước ${number}`}
+                    href={stepHref(lesson.id, number)}
+                    sx={{
+                      borderRadius: '50%',
+                      fontSize: '1.125rem',
+                      fontWeight: 500,
+                      height: 44,
+                      minHeight: 44,
+                      minWidth: 44,
+                      p: 0,
+                      width: 44,
+                      // Bước hiện tại: nền đậm + vòng viền, không chỉ dựa vào màu
+                      ...(isCurrent
+                        ? { bgcolor: 'primary.main', color: 'primary.contrastText', outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2, '&:hover': { bgcolor: 'primary.dark' } }
+                        : { bgcolor: 'm3.surfaceContainerLowest', color: 'text.primary', '&:hover': { bgcolor: 'm3.secondaryContainer' } }),
+                    }}
+                  >
+                    {number}
+                  </Button>
+                </li>
+              )
+            })}
+          </Box>
+        </Paper>
+      </PageHeader>
 
-            <nav
-              aria-label="Các bước"
-              className="rounded-[1.75rem] border-2 border-lesson-border bg-lesson-surface/80 p-2"
-            >
-              {/* Mobile: lưới 5 cột (5 + 4), mỗi nút vẫn ≥ 44px; từ sm trở lên: một hàng */}
-              <ol className="grid grid-cols-5 justify-items-center gap-1.5 sm:flex sm:gap-2">
-                {LESSON_STEP_KEYS.map((key, index) => {
-                  const number = index + 1
-                  const isCurrent = number === step
+      <Paper
+        aria-labelledby="step-heading"
+        component="section"
+        elevation={0}
+        sx={{ bgcolor: 'm3.surfaceContainerLowest', borderRadius: 7, p: { xs: 2.5, sm: 4, md: 6 } }}
+      >
+        <Chip
+          component="h2"
+          id="step-heading"
+          label={`Bước ${step} / ${LESSON_STEP_COUNT}`}
+          sx={{ bgcolor: 'm3.tertiaryContainer', color: 'm3.onTertiaryContainer', fontSize: '1rem', height: 36, mb: 3, px: 0.5 }}
+        />
 
-                  return (
-                    <li key={key}>
-                      <Link
-                        aria-current={isCurrent ? 'step' : undefined}
-                        aria-label={`Bước ${number}`}
-                        className={cn(
-                          'flex size-11 items-center justify-center rounded-full text-lg font-extrabold transition',
-                          focusRing,
-                          // Bước hiện tại: nền đậm + viền, không chỉ dựa vào màu
-                          isCurrent
-                            ? 'bg-lesson-primary text-white shadow-[0_0_0_3px_var(--lesson-surface),0_0_0_6px_var(--lesson-primary)]'
-                            : 'bg-lesson-primary-soft text-lesson-primary-dark hover:bg-lesson-border',
-                        )}
-                        href={stepHref(lesson.id, number)}
-                      >
-                        {number}
-                      </Link>
-                    </li>
-                  )
-                })}
-              </ol>
-            </nav>
-          </div>
+        <Box data-testid="step-content" sx={{ minHeight: 224 }}>
+          {hasContent ? (
+            <Box sx={proseSx}>
+              <RichText data={content as SerializedEditorState} />
+            </Box>
+          ) : (
+            <Typography color="text.secondary" variant="subtitle1">
+              Bước này chưa có nội dung.
+            </Typography>
+          )}
+        </Box>
 
-          <section
-            aria-labelledby="step-heading"
-            className="rounded-[1.75rem] border-2 border-lesson-border bg-lesson-surface p-5 shadow-[0_18px_40px_-24px_rgb(20_83_45/0.45)] sm:p-8 md:rounded-[2rem] md:p-12"
-          >
-            <h2
-              className="mb-6 inline-flex items-center rounded-full bg-lesson-accent/70 px-4 py-1.5 text-base font-extrabold text-lesson-primary-dark"
-              id="step-heading"
-            >
-              Bước {step} / {LESSON_STEP_COUNT}
-            </h2>
-
-            <div className="min-h-56" data-testid="step-content">
-              {hasContent ? (
-                <RichText className="lesson-prose" data={content as SerializedEditorState} />
-              ) : (
-                <p className="text-lg font-semibold text-lesson-muted">Bước này chưa có nội dung.</p>
-              )}
-            </div>
-
-            <div className="mt-10 flex items-center justify-between gap-3 border-t-2 border-lesson-primary-soft pt-6">
-              <StepButton href={step > 1 ? stepHref(lesson.id, step - 1) : null} variant="outline">
-                <ArrowLeft aria-hidden="true" className="size-5" strokeWidth={2.75} />
-                Trước
-              </StepButton>
-              <StepButton
-                href={step < LESSON_STEP_COUNT ? stepHref(lesson.id, step + 1) : null}
-                variant="primary"
-              >
-                Tiếp
-                <ArrowRight aria-hidden="true" className="size-5" strokeWidth={2.75} />
-              </StepButton>
-            </div>
-          </section>
-        </div>
-      </div>
-    </main>
+        <Stack direction="row" spacing={2} sx={{ borderTop: 1, borderColor: 'divider', justifyContent: 'space-between', mt: 5, pt: 3 }}>
+          <StepButton href={step > 1 ? stepHref(lesson.id, step - 1) : null} variant="tonal">
+            <ArrowBackRounded aria-hidden="true" />
+            Trước
+          </StepButton>
+          <StepButton href={step < LESSON_STEP_COUNT ? stepHref(lesson.id, step + 1) : null} variant="contained">
+            Tiếp
+            <ArrowForwardRounded aria-hidden="true" />
+          </StepButton>
+        </Stack>
+      </Paper>
+    </Container>
   )
 }
 
@@ -166,29 +184,22 @@ const StepButton = ({
 }: {
   children: React.ReactNode
   href: string | null
-  variant: 'outline' | 'primary'
+  variant: 'contained' | 'tonal'
 }) => {
-  const className = cn(
-    'inline-flex h-14 min-w-32 items-center justify-center gap-2 rounded-full px-6 text-lg font-extrabold transition sm:min-w-40',
-    focusRing,
-    variant === 'primary'
-      ? 'bg-lesson-primary text-white shadow-[0_8px_18px_-10px_rgb(21_128_61/0.9)] hover:bg-lesson-primary-dark'
-      : 'border-2 border-lesson-border bg-lesson-surface text-lesson-primary-dark hover:bg-lesson-primary-soft',
-    !href && 'pointer-events-none cursor-not-allowed opacity-45 shadow-none',
-  )
+  const sx = { fontSize: '1.125rem', gap: 1, minHeight: 56, minWidth: { xs: 128, sm: 160 } }
 
   // Bước đầu/cuối: nút vẫn hiển thị ở cùng vị trí nhưng bị vô hiệu hóa (không lưu tiến độ)
   if (!href) {
     return (
-      <span aria-disabled="true" className={className} role="link">
+      <Button aria-disabled="true" component="span" disabled role="link" size="large" sx={sx} variant={variant}>
         {children}
-      </span>
+      </Button>
     )
   }
 
   return (
-    <Link className={className} href={href}>
+    <Button href={href} size="large" sx={sx} variant={variant}>
       {children}
-    </Link>
+    </Button>
   )
 }

@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
+import Container from '@mui/material/Container'
 import React from 'react'
 
 import { formatSoundLabel, normalizeSound } from '@/collections/Lessons/sound'
-import { cn } from '@/utilities/ui'
+import { PageHeader } from '@/components/PageHeader'
 import { requireActiveUser } from '@/utilities/requireActiveUser'
 
 import { LessonList, type LessonListItem } from './_components/LessonList'
-import { lessonFont } from './_components/lessonFont'
 
 export const metadata: Metadata = {
   title: 'Bài học',
@@ -44,17 +44,9 @@ export default async function LessonsPage() {
   })
 
   return (
-    <main className={cn(lessonFont.className, 'lesson-page flex-1')}>
-      <div className="lesson-container py-10 md:py-14">
-        <p className="mb-3 inline-flex rounded-full bg-lesson-primary-soft px-4 py-1.5 text-sm font-bold text-lesson-primary-dark">
-          Luyện phát âm
-        </p>
-        <h1 className="mb-6 text-4xl font-extrabold tracking-tight text-lesson-primary-dark md:text-5xl">
-          Chọn bài để luyện
-        </h1>
-
-        <LessonList lessons={lessons} />
-      </div>
-    </main>
+    <Container maxWidth="lg" sx={{ py: { xs: 5, md: 8 } }}>
+      <PageHeader eyebrow="Luyện phát âm" title="Chọn bài để luyện" />
+      <LessonList lessons={lessons} />
+    </Container>
   )
 }

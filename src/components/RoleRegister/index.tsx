@@ -1,20 +1,19 @@
 'use client'
 
-import Link from 'next/link'
 import { FormEvent, useState } from 'react'
 
 import { registerAccount } from '@/actions/registerAccount'
-import {
-  cardClass,
-  errorAlertClass,
-  inputClass,
-  labelClass,
-  linkClass,
-  pageTitleClass,
-  pillClass,
-  primaryButtonClass,
-  successAlertClass,
-} from '@/components/ui/brand'
+import PersonAddAlt1Rounded from '@mui/icons-material/PersonAddAlt1Rounded'
+import Alert from '@mui/material/Alert'
+import Button from '@mui/material/Button'
+import CircularProgress from '@mui/material/CircularProgress'
+import Link from '@mui/material/Link'
+import Stack from '@mui/material/Stack'
+import TextField from '@mui/material/TextField'
+import Typography from '@mui/material/Typography'
+
+import { AuthCard } from '@/components/AuthCard'
+import { PasswordField } from '@/components/PasswordField'
 
 type Props = {
   role: 'giaovien' | 'hocsinh'
@@ -74,98 +73,85 @@ export function RoleRegister({
   }
 
   return (
-    <main className="flex flex-1 items-center justify-center px-4 py-12 md:py-20">
-      <form className={`${cardClass} w-full max-w-md p-6 sm:p-8`} onSubmit={handleSubmit}>
-        <p className={`${pillClass} mb-3`}>Vững Bền Center</p>
-        <h1 className={`${pageTitleClass} mb-6`}>{title}</h1>
+    <AuthCard
+      description={role === 'giaovien' ? 'Tài khoản Giáo viên cần được Admin phê duyệt trước khi đăng nhập.' : undefined}
+      icon={<PersonAddAlt1Rounded />}
+      title={title}
+    >
+      <form onSubmit={handleSubmit}>
+        <Stack spacing={2.5}>
+        <TextField
+          autoComplete="name"
+          disabled={loading}
+          fullWidth
+          id={`${role}-name`}
+          label="Họ và tên"
+          name="name"
+          required
+        />
 
-        <div className="space-y-5">
-          <div>
-            <label className={labelClass} htmlFor={`${role}-name`}>
-              Họ và tên
-            </label>
-            <input
-              autoComplete="name"
-              className={inputClass}
-              disabled={loading}
-              id={`${role}-name`}
-              name="name"
-              required
-              type="text"
-            />
-          </div>
+        <TextField
+          autoComplete="email"
+          disabled={loading}
+          fullWidth
+          id={`${role}-email`}
+          label="Email"
+          name="email"
+          required
+          type="email"
+        />
 
-          <div>
-            <label className={labelClass} htmlFor={`${role}-email`}>
-              Email
-            </label>
-            <input
-              autoComplete="email"
-              className={inputClass}
-              disabled={loading}
-              id={`${role}-email`}
-              name="email"
-              required
-              type="email"
-            />
-          </div>
+        <PasswordField
+          autoComplete="new-password"
+          disabled={loading}
+          fullWidth
+          helperText="Tối thiểu 8 ký tự."
+          id={`${role}-password`}
+          label="Mật khẩu"
+          name="password"
+          required
+          slotProps={{ htmlInput: { minLength: 8 } }}
+        />
 
-          <div>
-            <label className={labelClass} htmlFor={`${role}-password`}>
-              Mật khẩu
-            </label>
-            <input
-              autoComplete="new-password"
-              className={inputClass}
-              disabled={loading}
-              id={`${role}-password`}
-              minLength={8}
-              name="password"
-              required
-              type="password"
-            />
-          </div>
+        <PasswordField
+          autoComplete="new-password"
+          disabled={loading}
+          fullWidth
+          id={`${role}-confirm-password`}
+          label="Nhập lại mật khẩu"
+          name="confirmPassword"
+          required
+          slotProps={{ htmlInput: { minLength: 8 } }}
+        />
 
-          <div>
-            <label className={labelClass} htmlFor={`${role}-confirm-password`}>
-              Nhập lại mật khẩu
-            </label>
-            <input
-              autoComplete="new-password"
-              className={inputClass}
-              disabled={loading}
-              id={`${role}-confirm-password`}
-              minLength={8}
-              name="confirmPassword"
-              required
-              type="password"
-            />
-          </div>
+        {error && (
+          <Alert role="alert" severity="error">
+            {error}
+          </Alert>
+        )}
 
-          {error && (
-            <p className={errorAlertClass} role="alert">
-              {error}
-            </p>
-          )}
+        {message && (
+          <Alert role="status" severity="success">
+            {message}
+          </Alert>
+        )}
 
-          {message && (
-            <p className={successAlertClass} role="status">
-              {message}
-            </p>
-          )}
+        <Button
+          disabled={loading}
+          fullWidth
+          size="large"
+          startIcon={loading ? <CircularProgress color="inherit" size={18} /> : undefined}
+          type="submit"
+          variant="contained"
+        >
+          {loading ? 'Đang tạo tài khoản...' : 'Đăng ký'}
+        </Button>
 
-          <button className={`${primaryButtonClass} w-full`} disabled={loading} type="submit">
-            {loading ? 'Đang tạo tài khoản...' : 'Đăng ký'}
-          </button>
-
-          <p className="text-center font-semibold text-muted-foreground">
-            Đã có tài khoản?{' '}
-            <Link className={linkClass} href={loginTo}>
-              Đăng nhập
-            </Link>
-          </p>
-        </div>
+        <Typography color="text.secondary" sx={{ textAlign: 'center' }}>
+          Đã có tài khoản? <Link href={loginTo}>Đăng nhập</Link>
+        </Typography>
+        </Stack>
       </form>
-    </main>
+    </AuthCard>
   )
 }

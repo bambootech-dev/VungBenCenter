@@ -1,15 +1,35 @@
 import type { Metadata } from 'next'
-import { CheckCircle2, ChevronLeft, Clock, UserRound } from 'lucide-react'
-import Link from 'next/link'
+import AccessTimeRounded from '@mui/icons-material/AccessTimeRounded'
+import PersonRounded from '@mui/icons-material/PersonRounded'
+import Alert from '@mui/material/Alert'
+import Box from '@mui/material/Box'
+import Card from '@mui/material/Card'
+import CardContent from '@mui/material/CardContent'
+import Stack from '@mui/material/Stack'
+import Typography from '@mui/material/Typography'
+import { visuallyHidden } from '@mui/utils'
 import { notFound } from 'next/navigation'
 import React from 'react'
 
-import { cn } from '@/utilities/ui'
+import { PageHeader } from '@/components/PageHeader'
 import { TemplateValuesView } from '@/components/WorksheetTemplate/TemplateValuesView'
 import { requireActiveTeacher } from '@/utilities/requireActiveTeacher'
 import { readTemplateSnapshot, readTemplateValues } from '@/worksheetTemplates/snapshot'
 
-import { cardClass, focusRing, formatDateTime, pageTitleClass, pillClass } from '../../_components/teacherUi'
+import { formatDateTime } from '../../_components/teacherUi'
+
+// Hiển thị như assist chip M3: viền outline-variant, bo góc 8px
+const META_ITEM_SX = {
+  alignItems: 'center',
+  border: 1,
+  borderColor: 'divider',
+  borderRadius: 2,
+  display: 'inline-flex',
+  gap: 1,
+  minHeight: 32,
+  px: 1.5,
+  py: 0.5,
+} as const
 
 export const metadata: Metadata = {
   title: 'Bài đã nộp',
@@ -59,116 +79,100 @@ export default async function SubmissionDetailPage({ params, searchParams }: Pro
   const answers = new Map((submission.answers ?? []).map((answer) => [answer.questionKey, answer.value]))
 
   return (
-    <main className="flex-1">
-      <div className="lesson-container py-6 md:py-10">
-        <div className={cn('mx-auto', template ? 'max-w-6xl' : 'max-w-3xl')}>
-          <Link
-            className={cn(
-              'mb-5 inline-flex min-h-11 items-center gap-1 rounded-full pr-3 text-base font-bold text-lesson-primary-dark hover:underline',
-              focusRing,
-            )}
-            href="/giaovien/bai-da-nop"
-          >
-            <ChevronLeft aria-hidden="true" className="size-5" />
-            Bài đã nộp
-          </Link>
+    <Box sx={{ maxWidth: template ? undefined : 860 }}>
+      {justSubmitted && (
+        <Alert data-testid="submission-success" role="status" severity="success" sx={{ mb: 3 }}>
+          Đã nộp phiếu thành công.
+        </Alert>
+      )}
 
-          {justSubmitted && (
-            <div
-              className="mb-6 flex items-center gap-3 rounded-2xl border-2 border-lesson-primary/40 bg-lesson-primary-soft p-4 text-base font-bold text-lesson-primary-dark"
-              data-testid="submission-success"
-              role="status"
-            >
-              <CheckCircle2 aria-hidden="true" className="size-6 shrink-0 text-lesson-primary" />
-              Đã nộp phiếu thành công.
-            </div>
-          )}
+      <PageHeader back={{ href: '/giaovien/bai-da-nop', label: 'Bài đã nộp' }} eyebrow="Bài đã nộp" title={title} titleTestId="submission-title">
+        <Stack component="dl" direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ alignItems: { sm: 'center' }, m: 0, mt: 2.5 }}>
+          <Box sx={META_ITEM_SX}>
+            <Typography color="text.secondary" component="dt" sx={{ alignItems: 'center', display: 'inline-flex', gap: 0.75 }} variant="body2">
+              <PersonRounded aria-hidden="true" sx={{ fontSize: 18 }} />
+              Người nộp:
+            </Typography>
+            <Typography component="dd" data-testid="submission-teacher" sx={{ fontWeight: 500, m: 0 }} variant="body2">
+              {teacherName}
+            </Typography>
+          </Box>
+          <Box sx={META_ITEM_SX}>
+            <Typography color="text.secondary" component="dt" sx={{ alignItems: 'center', display: 'inline-flex', gap: 0.75 }} variant="body2">
+              <AccessTimeRounded aria-hidden="true" sx={{ fontSize: 18 }} />
+              Nộp lúc:
+            </Typography>
+            <Typography component="dd" data-testid="submission-time" sx={{ fontWeight: 500, m: 0 }} variant="body2">
+              <time dateTime={submission.submittedAt}>{formatDateTime(submission.submittedAt)}</time>
+            </Typography>
+          </Box>
+        </Stack>
+      </PageHeader>
 
-          <header className="mb-6">
-            <p className={`${pillClass} mb-3`}>Bài đã nộp</p>
-            <h1 className={pageTitleClass} data-testid="submission-title">
-              {title}
-            </h1>
-            <dl className="mt-4 flex flex-col gap-2 text-base font-bold text-lesson-muted sm:flex-row sm:gap-6">
-              <div className="inline-flex items-center gap-1.5">
-                <dt className="inline-flex items-center gap-1.5">
-                  <UserRound aria-hidden="true" className="size-5" strokeWidth={2.5} />
-                  Người nộp:
-                </dt>
-                <dd className="text-lesson-primary-dark" data-testid="submission-teacher">
-                  {teacherName}
-                </dd>
-              </div>
-              <div className="inline-flex items-center gap-1.5">
-                <dt className="inline-flex items-center gap-1.5">
-                  <Clock aria-hidden="true" className="size-5" strokeWidth={2.5} />
-                  Nộp lúc:
-                </dt>
-                <dd className="text-lesson-primary-dark" data-testid="submission-time">
-                  <time dateTime={submission.submittedAt}>{formatDateTime(submission.submittedAt)}</time>
-                </dd>
-              </div>
-            </dl>
-          </header>
+      {template && (
+        <TemplateValuesView teacherName={teacherName} template={template} values={readTemplateValues(submission.data)} />
+      )}
 
-          {template && (
-            <TemplateValuesView
-              teacherName={teacherName}
-              template={template}
-              values={readTemplateValues(submission.data)}
-            />
-          )}
+      {!template && snapshot?.instructions && (
+        <Card aria-label="Hướng dẫn" component="section" sx={{ mb: 3 }}>
+          <CardContent>
+            <Typography component="h2" sx={{ mb: 1 }} variant="h6">
+              Hướng dẫn
+            </Typography>
+            <Typography color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
+              {snapshot.instructions}
+            </Typography>
+          </CardContent>
+        </Card>
+      )}
 
-          {!template && snapshot?.instructions && (
-            <section aria-label="Hướng dẫn" className={cn(cardClass, 'mb-6 p-5 sm:p-6')}>
-              <h2 className="mb-2 text-lg font-extrabold text-lesson-primary-dark">Hướng dẫn</h2>
-              <p className="whitespace-pre-line text-base font-semibold text-lesson-muted">
-                {snapshot.instructions}
-              </p>
-            </section>
-          )}
+      {!template && (
+        <Stack component="ol" data-testid="submission-answers" spacing={2} sx={{ listStyle: 'none', m: 0, p: 0 }}>
+          {(snapshot?.questions ?? []).map((question, index) => {
+            const answer = answers.get(question.key)
 
-          {!template && (
-          <ol className="space-y-5" data-testid="submission-answers">
-            {(snapshot?.questions ?? []).map((question, index) => {
-              const answer = answers.get(question.key)
-
-              return (
-                <li className={cn(cardClass, 'p-5 sm:p-6')} data-question-key={question.key} key={question.key}>
-                  <h2 className="mb-3 text-lg font-extrabold text-lesson-primary-dark">
-                    <span className="mr-2 text-lesson-primary">{index + 1}.</span>
+            return (
+              <Card component="li" data-question-key={question.key} key={question.key}>
+                <CardContent>
+                  <Typography component="h2" sx={{ mb: 1.5 }} variant="h6">
+                    <Box component="span" sx={{ color: 'primary.main', mr: 1 }}>
+                      {index + 1}.
+                    </Box>
                     {question.label}
                     {question.required && (
                       <>
-                        <span aria-hidden="true" className="ml-1 text-red-700">
+                        <Box aria-hidden="true" component="span" sx={{ color: 'error.main', ml: 0.5 }}>
                           *
-                        </span>
-                        <span className="sr-only"> (bắt buộc)</span>
+                        </Box>
+                        <Box component="span" sx={visuallyHidden}>
+                          {' '}
+                          (bắt buộc)
+                        </Box>
                       </>
                     )}
-                  </h2>
+                  </Typography>
                   {answer ? (
-                    <p
-                      className="whitespace-pre-line break-words rounded-2xl bg-lesson-page p-4 text-base font-semibold text-lesson-primary-dark"
+                    <Typography
                       data-testid="submission-answer"
+                      sx={{ bgcolor: 'm3.surfaceContainerHigh', borderRadius: 3, overflowWrap: 'anywhere', p: 2, whiteSpace: 'pre-line' }}
                     >
                       {answer}
-                    </p>
+                    </Typography>
                   ) : (
-                    <p
-                      className="rounded-2xl border-2 border-dashed border-lesson-border p-4 text-base font-bold italic text-lesson-muted"
+                    <Typography
+                      color="text.secondary"
                       data-testid="submission-no-answer"
+                      sx={{ border: 1, borderColor: 'divider', borderRadius: 3, fontStyle: 'italic', p: 2 }}
                     >
                       Không trả lời
-                    </p>
+                    </Typography>
                   )}
-                </li>
-              )
-            })}
-          </ol>
-          )}
-        </div>
-      </div>
-    </main>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </Stack>
+      )}
+    </Box>
   )
 }

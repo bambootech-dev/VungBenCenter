@@ -1,22 +1,15 @@
 import type { Metadata } from 'next'
-import { ArrowRight, Clock } from 'lucide-react'
-import Link from 'next/link'
+import Stack from '@mui/material/Stack'
 import React from 'react'
 
-import { cn } from '@/utilities/ui'
+import { EmptyState } from '@/components/EmptyState'
+import { PageHeader } from '@/components/PageHeader'
 import { requireActiveTeacher } from '@/utilities/requireActiveTeacher'
 import { readSubtitle } from '@/worksheetTemplates/snapshot'
 
-import { EmptyState } from '../_components/EmptyState'
 import { Pagination } from '../_components/Pagination'
-import {
-  cardClass,
-  formatDateTime,
-  pageTitleClass,
-  parsePage,
-  pillClass,
-  secondaryButtonClass,
-} from '../_components/teacherUi'
+import { SubmissionCard } from '../_components/SubmissionCard'
+import { parsePage } from '../_components/teacherUi'
 
 export const metadata: Metadata = {
   title: 'Bài đã nộp',
@@ -52,64 +45,45 @@ export default async function SubmissionListPage({ searchParams }: Props) {
   })
 
   return (
-    <main className="flex-1">
-      <div className="lesson-container py-10 md:py-14">
-        <p className={`${pillClass} mb-3`}>Giáo viên</p>
-        <h1 className={`${pageTitleClass} mb-8`}>Bài đã nộp</h1>
+    <>
+      <PageHeader
+        description={result.totalDocs > 0 ? `Tổng cộng ${result.totalDocs} bài, mới nhất ở trên cùng.` : undefined}
+        eyebrow="Giáo viên"
+        title="Bài đã nộp"
+      />
 
-        {result.docs.length === 0 ? (
-          result.totalDocs === 0 ? (
-            <EmptyState
-              action={{ href: '/giaovien/phieu', label: 'Xem danh sách phiếu' }}
-              message="Bạn chưa nộp phiếu nào."
-              testId="submission-list-empty"
-            />
-          ) : (
-            <EmptyState
-              action={{ href: '/giaovien/bai-da-nop', label: 'Về trang đầu' }}
-              message="Trang này không có bài nộp."
-              testId="submission-list-empty"
-            />
-          )
+      {result.docs.length === 0 ? (
+        result.totalDocs === 0 ? (
+          <EmptyState
+            action={{ href: '/giaovien/phieu', label: 'Xem danh sách phiếu' }}
+            message="Bạn chưa nộp phiếu nào."
+            testId="submission-list-empty"
+          />
         ) : (
-          <ul className="space-y-4" data-testid="submission-list">
-            {result.docs.map((submission) => {
-              // Phiếu theo mẫu có `title`; bài kiểu cũ lấy tiêu đề từ bản chụp worksheet
-              const title = submission.title ?? submission.worksheetSnapshot?.title ?? 'Phiếu'
-              const subtitle = readSubtitle(submission.templateSnapshot, submission.data)
+          <EmptyState
+            action={{ href: '/giaovien/bai-da-nop', label: 'Về trang đầu' }}
+            message="Trang này không có bài nộp."
+            testId="submission-list-empty"
+          />
+        )
+      ) : (
+        <Stack component="ul" data-testid="submission-list" spacing={1.5} sx={{ listStyle: 'none', m: 0, p: 0 }}>
+          {result.docs.map((submission) => (
+            <li key={submission.id}>
+              <SubmissionCard
+                id={submission.id}
+                submittedAt={submission.submittedAt}
+                subtitle={readSubtitle(submission.templateSnapshot, submission.data)}
+                testId="submission-card"
+                // Phiếu theo mẫu có `title`; bài kiểu cũ lấy tiêu đề từ bản chụp worksheet
+                title={submission.title ?? submission.worksheetSnapshot?.title ?? 'Phiếu'}
+              />
+            </li>
+          ))}
+        </Stack>
+      )}
 
-              return (
-              <li key={submission.id}>
-                <article
-                  className={cn(cardClass, 'flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6')}
-                  data-testid="submission-card"
-                >
-                  <div>
-                    <h2 className="text-lg font-extrabold text-lesson-primary-dark">{title}</h2>
-                    {subtitle && <p className="mt-1 text-sm font-bold text-lesson-primary">{subtitle}</p>}
-                    <p className="mt-1 inline-flex items-center gap-1.5 text-sm font-bold text-lesson-muted">
-                      <Clock aria-hidden="true" className="size-4" strokeWidth={2.5} />
-                      Nộp lúc{' '}
-                      <time dateTime={submission.submittedAt}>{formatDateTime(submission.submittedAt)}</time>
-                    </p>
-                  </div>
-                  <Link
-                    aria-label={`Xem chi tiết bài nộp ${title} lúc ${formatDateTime(submission.submittedAt)}`}
-                    className={cn(secondaryButtonClass, 'self-start sm:self-auto')}
-                    href={`/giaovien/bai-da-nop/${submission.id}`}
-                  >
-                    Xem chi tiết
-                    <ArrowRight aria-hidden="true" className="size-5" strokeWidth={2.75} />
-                  </Link>
-                </article>
-              </li>
-              )
-            })}
-          </ul>
-        )}
-
-        <Pagination basePath="/giaovien/bai-da-nop" page={page} totalPages={result.totalPages} />
-      </div>
-    </main>
+      <Pagination basePath="/giaovien/bai-da-nop" page={page} totalPages={result.totalPages} />
+    </>
   )
 }

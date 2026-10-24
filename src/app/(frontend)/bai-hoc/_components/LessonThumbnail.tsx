@@ -1,5 +1,6 @@
 'use client'
 
+import Box from '@mui/material/Box'
 import Image from 'next/image'
 import React, { useCallback, useState } from 'react'
 
@@ -23,34 +24,57 @@ export const LessonThumbnail = ({ eager = false, sound, url }: Props) => {
   if (url && !failed) {
     // Ảnh chỉ minh họa: tên bài bên dưới đã là tên của link
     return (
-      <span className="relative block aspect-[16/10] overflow-hidden bg-lesson-primary-soft">
+      <Box
+        className="lesson-thumb"
+        component="span"
+        sx={{
+          aspectRatio: '16 / 10',
+          bgcolor: 'm3.surfaceContainerHigh',
+          display: 'block',
+          overflow: 'hidden',
+          position: 'relative',
+          '& img': { transition: 'transform 300ms' },
+        }}
+      >
         <Image
           alt=""
-          className="object-cover transition duration-300 group-hover:scale-[1.03] motion-reduce:group-hover:scale-100"
           data-testid="lesson-thumbnail-image"
           fill
           loading={eager ? 'eager' : 'lazy'}
           onError={() => setFailed(true)}
           ref={checkAlreadyFailed}
-          sizes="(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw"
+          sizes="(min-width: 1200px) 380px, (min-width: 600px) 50vw, 100vw"
           src={url}
+          style={{ objectFit: 'cover' }}
         />
-      </span>
+      </Box>
     )
   }
 
-  // Không có ảnh hoặc ảnh lỗi: hiển thị chính âm đó cỡ lớn trên nền gradient xanh nhạt
+  // Không có ảnh hoặc ảnh lỗi: hiển thị chính âm đó cỡ lớn trên nền tonal với vài hình khối trang trí
   return (
-    <span
+    <Box
       aria-hidden="true"
-      className="relative flex aspect-[16/10] items-center justify-center overflow-hidden bg-gradient-to-br from-lesson-primary-soft via-lesson-page to-lesson-accent/40"
+      component="span"
       data-testid="lesson-thumbnail-placeholder"
+      sx={{
+        alignItems: 'center',
+        aspectRatio: '16 / 10',
+        bgcolor: 'm3.secondaryContainer',
+        display: 'flex',
+        justifyContent: 'center',
+        overflow: 'hidden',
+        position: 'relative',
+      }}
     >
-      <span className="absolute -right-6 -top-6 size-24 rounded-full bg-lesson-accent/60" />
-      <span className="absolute -bottom-10 -left-8 h-24 w-48 rounded-[50%] bg-lesson-border/70" />
-      <span className="relative text-7xl font-extrabold text-lesson-primary drop-shadow-[0_3px_0_rgb(255_255_255/0.9)]">
+      <Box component="span" sx={{ bgcolor: 'm3.tertiaryContainer', borderRadius: '50%', height: 96, position: 'absolute', right: -24, top: -24, width: 96 }} />
+      <Box component="span" sx={{ bgcolor: 'm3.primaryContainer', borderRadius: '50%', bottom: -40, height: 96, left: -32, position: 'absolute', width: 192 }} />
+      <Box
+        component="span"
+        sx={{ color: 'm3.onSecondaryContainer', fontSize: '4.5rem', fontWeight: 500, position: 'relative' }}
+      >
         {sound}
-      </span>
-    </span>
+      </Box>
+    </Box>
   )
 }

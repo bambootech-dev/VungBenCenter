@@ -1,19 +1,26 @@
-import Link from 'next/link'
+import Button from '@mui/material/Button'
+import Card from '@mui/material/Card'
+import CardContent from '@mui/material/CardContent'
+import Container from '@mui/material/Container'
+import Typography from '@mui/material/Typography'
 import React from 'react'
-
-import { cardClass } from '@/components/ui/brand'
-import { Button } from '@/components/ui/button'
 
 export default function NotFound() {
   return (
-    <main className="lesson-container flex-1 py-20 md:py-28">
-      <div className={`${cardClass} mx-auto max-w-xl p-8 text-center`}>
-        <h1 className="mb-2 text-5xl font-extrabold text-lesson-primary">404</h1>
-        <p className="mb-6 text-lg font-semibold text-muted-foreground">Không tìm thấy trang bạn yêu cầu.</p>
-        <Button asChild size="lg">
-          <Link href="/">Về trang chủ</Link>
-        </Button>
-      </div>
-    </main>
+    <Container maxWidth="sm" sx={{ py: { xs: 10, md: 14 } }}>
+      <Card>
+        <CardContent sx={{ p: { xs: 4, md: 6 }, textAlign: 'center' }}>
+          <Typography color="primary" component="h1" sx={{ fontSize: { xs: '4rem', md: '5rem' }, lineHeight: 1 }} variant="h1">
+            404
+          </Typography>
+          <Typography sx={{ mb: 4, mt: 2 }} variant="subtitle1">
+            Không tìm thấy trang bạn yêu cầu.
+          </Typography>
+          <Button href="/" size="large" variant="contained">
+            Về trang chủ
+          </Button>
+        </CardContent>
+      </Card>
+    </Container>
   )
 }

@@ -1,14 +1,18 @@
 import type { Metadata } from 'next'
-import { ArrowRight, ChevronLeft } from 'lucide-react'
-import Link from 'next/link'
+import ArrowForwardRounded from '@mui/icons-material/ArrowForwardRounded'
+import DescriptionRounded from '@mui/icons-material/DescriptionRounded'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import Card from '@mui/material/Card'
+import CardActions from '@mui/material/CardActions'
+import CardContent from '@mui/material/CardContent'
+import Typography from '@mui/material/Typography'
 import { redirect } from 'next/navigation'
 import React from 'react'
 
-import { cn } from '@/utilities/ui'
+import { PageHeader } from '@/components/PageHeader'
 import { requireActiveTeacher } from '@/utilities/requireActiveTeacher'
 import { WORKSHEET_TEMPLATES } from '@/worksheetTemplates/definitions'
-
-import { cardClass, focusRing, pageTitleClass, pillClass, primaryButtonClass } from '../../_components/teacherUi'
 
 export const metadata: Metadata = {
   title: 'Tạo phiếu',
@@ -23,43 +27,57 @@ export default async function ChooseTemplatePage() {
   }
 
   return (
-    <main className="flex-1">
-      <div className="lesson-container py-6 md:py-10">
-        <Link
-          className={cn(
-            'mb-5 inline-flex min-h-11 items-center gap-1 rounded-full pr-3 text-base font-bold text-lesson-primary-dark hover:underline',
-            focusRing,
-          )}
-          href="/giaovien/phieu"
-        >
-          <ChevronLeft aria-hidden="true" className="size-5" />
-          Phiếu
-        </Link>
+    <>
+      <PageHeader back={{ href: '/giaovien/phieu', label: 'Phiếu' }} eyebrow="Tạo phiếu" title="Chọn mẫu phiếu" />
 
-        <p className={`${pillClass} mb-3`}>Tạo phiếu</p>
-        <h1 className={`${pageTitleClass} mb-8`}>Chọn mẫu phiếu</h1>
-
-        <ul className="grid gap-5 md:grid-cols-2" data-testid="template-list">
-          {WORKSHEET_TEMPLATES.map((template) => (
-            <li key={template.code}>
-              <article className={cn(cardClass, 'flex h-full flex-col gap-4 p-6')} data-testid="template-card">
-                <div className="flex-1">
-                  <h2 className="text-xl font-extrabold text-lesson-primary-dark">{template.title}</h2>
-                  <p className="mt-2 text-base font-semibold text-lesson-muted">{template.description}</p>
-                </div>
-                <Link
+      <Box
+        component="ul"
+        data-testid="template-list"
+        sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, 1fr)' }, listStyle: 'none', m: 0, p: 0 }}
+      >
+        {WORKSHEET_TEMPLATES.map((template) => (
+          <li key={template.code}>
+            <Card component="article" data-testid="template-card" sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <CardContent sx={{ display: 'flex', flex: 1, gap: 2 }}>
+                <Box
+                  aria-hidden="true"
+                  sx={{
+                    alignItems: 'center',
+                    bgcolor: 'm3.primaryContainer',
+                    borderRadius: 4,
+                    color: 'm3.onPrimaryContainer',
+                    display: 'flex',
+                    flexShrink: 0,
+                    height: 56,
+                    justifyContent: 'center',
+                    width: 56,
+                  }}
+                >
+                  <DescriptionRounded />
+                </Box>
+                <Box>
+                  <Typography component="h2" variant="h5">
+                    {template.title}
+                  </Typography>
+                  <Typography color="text.secondary" sx={{ mt: 1 }}>
+                    {template.description}
+                  </Typography>
+                </Box>
+              </CardContent>
+              <CardActions sx={{ justifyContent: 'flex-end', px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 3 }, pt: 0 }}>
+                <Button
                   aria-label={`Điền ${template.title}`}
-                  className={cn(primaryButtonClass, 'self-start')}
+                  endIcon={<ArrowForwardRounded />}
                   href={`/giaovien/phieu/moi/${template.code}`}
+                  variant="contained"
                 >
                   Điền phiếu này
-                  <ArrowRight aria-hidden="true" className="size-5" strokeWidth={2.75} />
-                </Link>
-              </article>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </main>
+                </Button>
+              </CardActions>
+            </Card>
+          </li>
+        ))}
+      </Box>
+    </>
   )
 }
