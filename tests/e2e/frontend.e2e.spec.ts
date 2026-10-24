@@ -11,6 +11,6 @@ test.describe('Frontend', () => {
   test('can load role selection page', async ({ page }) => {
     await page.goto('http://localhost:3000/login')
     await expect(page.getByRole('link', { name: 'Đăng nhập Giáo viên' })).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Đăng nhập Học sinh' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Đăng nhập Học sinh / Phụ huynh' })).toBeVisible()
   })
 })

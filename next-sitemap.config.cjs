@@ -7,13 +7,13 @@ const SITE_URL =
 module.exports = {
   siteUrl: SITE_URL,
   generateRobotsTxt: true,
-  // Account pages, dashboards and the admin panel are not for search engines
-  exclude: ['/login', '/login/*', '/register/*', '/giaovien/*', '/hocsinh/*', '/admin', '/admin/*'],
+  // Account pages, dashboards, lessons and the admin panel are not for search engines
+  exclude: ['/login', '/login/*', '/register/*', '/giaovien/*', '/hocsinh/*', '/bai-hoc', '/bai-hoc/*', '/admin', '/admin/*'],
   robotsTxtOptions: {
     policies: [
       {
         userAgent: '*',
-        disallow: ['/admin', '/giaovien', '/hocsinh'],
+        disallow: ['/admin', '/giaovien', '/hocsinh', '/bai-hoc'],
       },
     ],
   },

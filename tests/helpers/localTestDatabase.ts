@@ -2,36 +2,30 @@ import dotenv from 'dotenv'
 import fs from 'fs'
 import path from 'path'
 
+import {
+  APPROVED_LOCAL_DATABASES,
+  assertSafeDatabase,
+  DATABASE_ENVIRONMENT_VARIABLE,
+  type DatabaseTarget,
+  describeDatabaseTarget,
+  parseDatabaseTarget,
+} from '../../src/utilities/assertSafeDatabase'
+
+export { type DatabaseTarget, describeDatabaseTarget }
+
 // Tests reset the users table, so they may only ever touch the local docker
 // container `vbc-test-db`. Never print the full connection string or password.
 export const LOCAL_TEST_DATABASE = {
   hostnames: ['127.0.0.1', 'localhost'],
   port: '54329',
-  database: 'vbc_test',
+  database: APPROVED_LOCAL_DATABASES.test,
 }
-
-export type DatabaseTarget = {
-  hostname: string
-  port: string
-  database: string
-}
-
-export const describeDatabaseTarget = ({ hostname, port, database }: DatabaseTarget) =>
-  `host=${hostname || '(none)'} port=${port || '(none)'} database=${database || '(none)'}`
 
 const parseDatabaseUrl = (url: string): DatabaseTarget => {
-  let parsed: URL
-
   try {
-    parsed = new URL(url)
+    return parseDatabaseTarget(url)
   } catch {
     throw new Error('[test-db] DATABASE_URL is not a valid URL.')
-  }
-
-  return {
-    hostname: parsed.hostname,
-    port: parsed.port,
-    database: decodeURIComponent(parsed.pathname.replace(/^\//, '')),
   }
 }
 
@@ -101,7 +95,13 @@ export const loadLocalTestEnv = (cwd = process.cwd()): DatabaseTarget => {
     throw new Error('[test-db] Refusing to run: set ALLOW_TEST_DB_RESET=true in .env.test.')
   }
 
+  // Same runtime guard as payload.config.ts, in its test mode
+  assertSafeDatabase(testEnv.DATABASE_URL, { NODE_ENV: 'test' })
+
   Object.assign(process.env, testEnv)
+  // Marks child processes (e.g. `next dev` started by Playwright, which forces
+  // NODE_ENV=development) as tests, so payload.config.ts only accepts vbc_test
+  process.env[DATABASE_ENVIRONMENT_VARIABLE] = 'test'
 
   return target
 }

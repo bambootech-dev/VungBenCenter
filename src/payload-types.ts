@@ -69,6 +69,9 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    lessons: Lesson;
+    worksheets: Worksheet;
+    'worksheet-submissions': WorksheetSubmission;
     'payload-kv': PayloadKv;
     'payload-folders': FolderInterface;
     'payload-locked-documents': PayloadLockedDocument;
@@ -83,6 +86,9 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    lessons: LessonsSelect<false> | LessonsSelect<true>;
+    worksheets: WorksheetsSelect<false> | WorksheetsSelect<true>;
+    'worksheet-submissions': WorksheetSubmissionsSelect<false> | WorksheetSubmissionsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-folders': PayloadFoldersSelect<false> | PayloadFoldersSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -273,6 +279,253 @@ export interface FolderInterface {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "lessons".
+ */
+export interface Lesson {
+  id: number;
+  /**
+   * Chỉ nhập tên âm, ví dụ: Th, Tr, Ch. Trang học tự hiển thị "Âm Th".
+   */
+  sound: string;
+  order: number;
+  thumbnail?: (number | null) | Media;
+  steps?: {
+    step1?: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    } | null;
+    step2?: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    } | null;
+    step3?: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    } | null;
+    step4?: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    } | null;
+    step5?: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    } | null;
+    step6?: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    } | null;
+    step7?: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    } | null;
+    step8?: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    } | null;
+    step9?: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    } | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Worksheet kiểu cũ, chỉ giữ để đọc lại các bài đã nộp trước đây. Không cần tạo mới: Giáo viên tạo phiếu theo mẫu có sẵn.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "worksheets".
+ */
+export interface Worksheet {
+  id: number;
+  title: string;
+  instructions?: string | null;
+  /**
+   * Không bắt buộc. Chọn nếu worksheet dùng cho một bài học cụ thể.
+   */
+  lesson?: (number | null) | Lesson;
+  /**
+   * Mỗi câu hỏi là một ô nhập văn bản.
+   */
+  questions: {
+    /**
+     * Định danh cố định, duy nhất trong worksheet, ví dụ: muc-tieu. Không nên đổi sau khi đã có bài nộp.
+     */
+    key: string;
+    label: string;
+    required?: boolean | null;
+    id?: string | null;
+  }[];
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Phiếu Giáo viên đã nộp. Chỉ xem, không sửa hoặc xóa được.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "worksheet-submissions".
+ */
+export interface WorksheetSubmission {
+  id: number;
+  title?: string | null;
+  /**
+   * Lấy từ phiên đăng nhập.
+   */
+  teacher: number | User;
+  /**
+   * Do server đặt khi nộp.
+   */
+  submittedAt: string;
+  templateCode?: string | null;
+  templateVersion?: number | null;
+  templateSnapshot?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  data?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  worksheet?: (number | null) | Worksheet;
+  /**
+   * Server sao chép từ worksheet gốc khi nộp.
+   */
+  worksheetSnapshot?: {
+    title?: string | null;
+    instructions?: string | null;
+    questions?:
+      | {
+          key: string;
+          label: string;
+          required?: boolean | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  /**
+   * Chỉ lưu câu đã trả lời; câu không bắt buộc bỏ trống sẽ không có dòng.
+   */
+  answers?:
+    | {
+        questionKey: string;
+        value: string;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -302,6 +555,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'lessons';
+        value: number | Lesson;
+      } | null)
+    | ({
+        relationTo: 'worksheets';
+        value: number | Worksheet;
+      } | null)
+    | ({
+        relationTo: 'worksheet-submissions';
+        value: number | WorksheetSubmission;
       } | null)
     | ({
         relationTo: 'payload-folders';
@@ -468,6 +733,86 @@ export interface MediaSelect<T extends boolean = true> {
               filename?: T;
             };
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "lessons_select".
+ */
+export interface LessonsSelect<T extends boolean = true> {
+  sound?: T;
+  order?: T;
+  thumbnail?: T;
+  steps?:
+    | T
+    | {
+        step1?: T;
+        step2?: T;
+        step3?: T;
+        step4?: T;
+        step5?: T;
+        step6?: T;
+        step7?: T;
+        step8?: T;
+        step9?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "worksheets_select".
+ */
+export interface WorksheetsSelect<T extends boolean = true> {
+  title?: T;
+  instructions?: T;
+  lesson?: T;
+  questions?:
+    | T
+    | {
+        key?: T;
+        label?: T;
+        required?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "worksheet-submissions_select".
+ */
+export interface WorksheetSubmissionsSelect<T extends boolean = true> {
+  title?: T;
+  teacher?: T;
+  submittedAt?: T;
+  templateCode?: T;
+  templateVersion?: T;
+  templateSnapshot?: T;
+  data?: T;
+  worksheet?: T;
+  worksheetSnapshot?:
+    | T
+    | {
+        title?: T;
+        instructions?: T;
+        questions?:
+          | T
+          | {
+              key?: T;
+              label?: T;
+              required?: T;
+              id?: T;
+            };
+      };
+  answers?:
+    | T
+    | {
+        questionKey?: T;
+        value?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

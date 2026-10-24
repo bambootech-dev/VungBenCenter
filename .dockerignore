@@ -1,0 +1,12 @@
+# Env files hold local or production secrets: configure the deployment environment instead
+.env
+.env.*
+!.env.example
+!.env.test.example
+test.env
+
+node_modules
+.next
+.git
+test-results
+playwright-report

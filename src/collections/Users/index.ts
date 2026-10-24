@@ -183,7 +183,8 @@ export const Users: CollectionConfig = {
           value: 'giaovien',
         },
         {
-          label: 'Học sinh',
+          // Học sinh và Phụ huynh dùng chung role hocsinh; chỉ đổi nhãn hiển thị
+          label: 'Học sinh / Phụ huynh',
           value: 'hocsinh',
         },
       ],

@@ -4,7 +4,7 @@ export default function HocSinhLoginPage() {
   return (
     <RoleLogin
       role="hocsinh"
-      title="Đăng nhập Học sinh"
+      title="Đăng nhập Học sinh / Phụ huynh"
       redirectTo="/hocsinh/dashboard"
     />
   )

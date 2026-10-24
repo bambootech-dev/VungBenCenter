@@ -4,7 +4,7 @@ export default function HocSinhRegisterPage() {
   return (
     <RoleRegister
       role="hocsinh"
-      title="Đăng ký Học sinh"
+      title="Đăng ký tài khoản người học"
       loginTo="/login/hocsinh"
     />
   )

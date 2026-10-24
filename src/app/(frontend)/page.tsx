@@ -1,11 +1,12 @@
 import Link from 'next/link'
 import React from 'react'
 
+import { cardClass, pillClass } from '@/components/ui/brand'
 import { Button } from '@/components/ui/button'
 
 const roles = [
   {
-    title: 'Học sinh',
+    title: 'Học sinh / Phụ huynh',
     description: 'Đăng ký và đăng nhập ngay để vào khu vực học tập.',
     register: '/register/hocsinh',
     login: '/login/hocsinh',
@@ -20,14 +21,14 @@ const roles = [
 
 export default function HomePage() {
   return (
-    <main className="container py-16 md:py-24">
+    <main className="lesson-container flex-1 py-16 md:py-24">
       <section className="max-w-2xl">
-        <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+        <p className={`${pillClass} mb-4`}>
           Trung tâm học tập
         </p>
-        <h1 className="mb-4 text-4xl font-semibold tracking-tight md:text-5xl">Vững Bền Center</h1>
-        <p className="mb-8 text-lg text-muted-foreground">
-          Nền tảng dành cho Học sinh và Giáo viên của trung tâm.
+        <h1 className="mb-4 text-4xl font-extrabold tracking-tight text-lesson-primary-dark md:text-5xl">Vững Bền Center</h1>
+        <p className="mb-8 text-lg font-semibold text-muted-foreground">
+          Nền tảng dành cho Học sinh / Phụ huynh và Giáo viên của trung tâm.
         </p>
         <Button asChild size="lg">
           <Link href="/login">Đăng nhập</Link>
@@ -36,9 +37,9 @@ export default function HomePage() {
 
       <section className="mt-16 grid gap-6 md:grid-cols-2">
         {roles.map((role) => (
-          <article className="rounded-lg border border-border bg-card p-6" key={role.title}>
-            <h2 className="mb-2 text-xl font-semibold">{role.title}</h2>
-            <p className="mb-6 text-muted-foreground">{role.description}</p>
+          <article className={`${cardClass} p-6 md:p-8`} key={role.title}>
+            <h2 className="mb-2 text-2xl font-extrabold text-lesson-primary-dark">{role.title}</h2>
+            <p className="mb-6 font-semibold text-muted-foreground">{role.description}</p>
             <div className="flex flex-wrap gap-3">
               <Button asChild>
                 <Link href={role.register}>Đăng ký {role.title}</Link>
