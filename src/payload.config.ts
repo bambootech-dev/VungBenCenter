@@ -7,6 +7,8 @@ import { fileURLToPath } from 'url'
 import { Lessons } from './collections/Lessons'
 import { Media } from './collections/Media'
 import { Users } from './collections/Users'
+import { WorksheetSubmissions } from './collections/WorksheetSubmissions'
+import { Worksheets } from './collections/Worksheets'
 import { assertSafeDatabase } from './utilities/assertSafeDatabase'
 import { getServerSideURL } from './utilities/getURL'
 
@@ -21,6 +23,8 @@ export default buildConfig({
     importMap: {
       baseDir: path.resolve(dirname),
     },
+    // Cố định theme sáng để /admin cùng phong cách nền sáng, nút xanh lá với frontend (custom.scss)
+    theme: 'light',
     user: Users.slug,
   },
   db: postgresAdapter({
@@ -29,7 +33,7 @@ export default buildConfig({
     },
     migrationDir: path.resolve(dirname, 'migrations'),
   }),
-  collections: [Users, Media, Lessons],
+  collections: [Users, Media, Lessons, Worksheets, WorksheetSubmissions],
   cors: [getServerSideURL()].filter(Boolean),
   secret: process.env.PAYLOAD_SECRET,
   sharp,

@@ -73,25 +73,27 @@
 }
 
 :root {
+  /* Token chung (shadcn) trỏ về bảng màu xanh lá của trang /bai-hoc (--lesson-* bên dưới),
+     để header, footer, nút và card ở mọi trang cùng một phong cách */
   --background: oklch(100% 0 0deg);
-  --foreground: oklch(14.5% 0 0deg);
-  --card: oklch(96.5% 0.005 265deg);
-  --card-foreground: oklch(14.5% 0 0deg);
-  --popover: oklch(100% 0 0deg);
-  --popover-foreground: oklch(14.5% 0 0deg);
-  --primary: oklch(20.5% 0 0deg);
-  --primary-foreground: oklch(98.5% 0 0deg);
-  --secondary: oklch(97% 0 0deg);
-  --secondary-foreground: oklch(20.5% 0 0deg);
-  --muted: oklch(97% 0 0deg);
-  --muted-foreground: oklch(55.6% 0 0deg);
-  --accent: oklch(97% 0 0deg);
-  --accent-foreground: oklch(20.5% 0 0deg);
+  --foreground: var(--lesson-primary-dark);
+  --card: var(--lesson-surface);
+  --card-foreground: var(--lesson-primary-dark);
+  --popover: var(--lesson-surface);
+  --popover-foreground: var(--lesson-primary-dark);
+  --primary: var(--lesson-primary);
+  --primary-foreground: oklch(100% 0 0deg);
+  --secondary: var(--lesson-primary-soft);
+  --secondary-foreground: var(--lesson-primary-dark);
+  --muted: var(--lesson-primary-soft);
+  --muted-foreground: var(--lesson-muted);
+  --accent: var(--lesson-primary-soft);
+  --accent-foreground: var(--lesson-primary-dark);
   --destructive: oklch(57.7% 0.245 27.325deg);
   --destructive-foreground: oklch(57.7% 0.245 27.325deg);
-  --border: oklch(92.2% 0 0deg);
-  --input: oklch(92.2% 0 0deg);
-  --ring: oklch(70.8% 0 0deg);
+  --border: var(--lesson-border);
+  --input: var(--lesson-border);
+  --ring: var(--lesson-primary);
   --chart-1: oklch(64.6% 0.222 41.116deg);
   --chart-2: oklch(60% 0.118 184.704deg);
   --chart-3: oklch(39.8% 0.07 227.392deg);

@@ -1,212 +1,82 @@
 import Link from 'next/link'
 
+import {
+  cardClass,
+  linkClass,
+  pageTitleClass,
+  pillClass,
+  primaryButtonClass,
+  secondaryButtonClass,
+} from '@/components/ui/brand'
+
+const roles = [
+  {
+    badge: 'GV',
+    title: 'Giáo viên',
+    description: 'Truy cập khu vực quản lý dành cho Giáo viên.',
+    login: { href: '/login/giaovien', label: 'Đăng nhập Giáo viên' },
+    register: { href: '/register/giaovien', label: 'Đăng ký Giáo viên' },
+    note: 'Tài khoản Giáo viên cần được Admin phê duyệt.',
+  },
+  {
+    // Học sinh / Phụ huynh: dùng chung role hocsinh
+    badge: 'HS',
+    title: 'Học sinh / Phụ huynh',
+    description: 'Truy cập khu vực học tập dành cho Học sinh và Phụ huynh.',
+    login: { href: '/login/hocsinh', label: 'Đăng nhập Học sinh / Phụ huynh' },
+    register: { href: '/register/hocsinh', label: 'Đăng ký tài khoản người học' },
+    note: 'Học sinh / Phụ huynh có thể đăng nhập ngay sau khi đăng ký.',
+  },
+]
+
 export default function AccountPage() {
   return (
-    <main style={styles.main}>
-      <section style={styles.container}>
-        <div style={styles.heading}>
-          <p style={styles.eyebrow}>VỮNG BỀN CENTER</p>
-          <h1 style={styles.title}>Chào mừng bạn</h1>
-          <p style={styles.description}>
-            Vui lòng chọn vai trò để đăng nhập hoặc tạo tài khoản.
+    <main className="flex-1">
+      <section className="lesson-container py-12 md:py-20">
+        <div className="mx-auto max-w-4xl">
+          <div className="mb-10 text-center">
+            <p className={`${pillClass} mb-4`}>Vững Bền Center</p>
+            <h1 className={`${pageTitleClass} mb-3`}>Chào mừng bạn</h1>
+            <p className="text-lg font-semibold text-muted-foreground">
+              Vui lòng chọn vai trò để đăng nhập hoặc tạo tài khoản.
+            </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            {roles.map((role) => (
+              <article className={`${cardClass} flex flex-col p-6 md:p-8`} key={role.title}>
+                <div
+                  aria-hidden="true"
+                  className="mb-5 flex size-14 items-center justify-center rounded-full bg-lesson-primary-soft text-lg font-extrabold text-lesson-primary-dark"
+                >
+                  {role.badge}
+                </div>
+
+                <h2 className="mb-2 text-2xl font-extrabold text-lesson-primary-dark">{role.title}</h2>
+                <p className="mb-6 font-semibold text-muted-foreground">{role.description}</p>
+
+                <div className="mt-auto flex flex-col gap-3">
+                  <Link className={primaryButtonClass} href={role.login.href}>
+                    {role.login.label}
+                  </Link>
+                  <Link className={secondaryButtonClass} href={role.register.href}>
+                    {role.register.label}
+                  </Link>
+                </div>
+
+                <p className="mt-4 text-sm font-semibold text-muted-foreground">{role.note}</p>
+              </article>
+            ))}
+          </div>
+
+          <p className="mt-8 text-center font-semibold text-muted-foreground">
+            Bạn là quản trị viên?{' '}
+            <Link className={linkClass} href="/admin/login">
+              Đăng nhập Admin
+            </Link>
           </p>
         </div>
-
-        <div style={styles.grid}>
-          {/* Giáo viên */}
-          <article style={styles.card}>
-            <div style={styles.icon}>GV</div>
-
-            <h2 style={styles.cardTitle}>Giáo viên</h2>
-
-            <p style={styles.cardDescription}>
-              Truy cập khu vực quản lý dành cho Giáo viên.
-            </p>
-
-            <div style={styles.actions}>
-              <Link
-                href="/login/giaovien"
-                style={styles.primaryButton}
-              >
-                Đăng nhập Giáo viên
-              </Link>
-
-              <Link
-                href="/register/giaovien"
-                style={styles.secondaryButton}
-              >
-                Đăng ký Giáo viên
-              </Link>
-            </div>
-
-            <p style={styles.note}>
-              Tài khoản Giáo viên cần được Admin phê duyệt.
-            </p>
-          </article>
-
-          {/* Học sinh / Phụ huynh: dùng chung role hocsinh */}
-          <article style={styles.card}>
-            <div style={styles.icon}>HS</div>
-
-            <h2 style={styles.cardTitle}>Học sinh / Phụ huynh</h2>
-
-            <p style={styles.cardDescription}>
-              Truy cập khu vực học tập dành cho Học sinh và Phụ huynh.
-            </p>
-
-            <div style={styles.actions}>
-              <Link
-                href="/login/hocsinh"
-                style={styles.primaryButton}
-              >
-                Đăng nhập Học sinh / Phụ huynh
-              </Link>
-
-              <Link
-                href="/register/hocsinh"
-                style={styles.secondaryButton}
-              >
-                Đăng ký tài khoản người học
-              </Link>
-            </div>
-
-            <p style={styles.note}>
-              Học sinh / Phụ huynh có thể đăng nhập ngay sau khi đăng ký.
-            </p>
-          </article>
-        </div>
-
-        <p style={styles.adminText}>
-          Bạn là quản trị viên?{' '}
-          <Link href="/admin/login" style={styles.adminLink}>
-            Đăng nhập Admin
-          </Link>
-        </p>
       </section>
     </main>
   )
-}
-
-const styles = {
-  main: {
-    minHeight: '100vh',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: '40px 20px',
-    backgroundColor: '#080808',
-    color: '#ffffff',
-  },
-
-  container: {
-    width: '100%',
-    maxWidth: '950px',
-  },
-
-  heading: {
-    marginBottom: '40px',
-    textAlign: 'center' as const,
-  },
-
-  eyebrow: {
-    marginBottom: '12px',
-    color: '#a3a3a3',
-    fontSize: '13px',
-    fontWeight: 700,
-    letterSpacing: '2px',
-  },
-
-  title: {
-    margin: '0 0 12px',
-    fontSize: '42px',
-  },
-
-  description: {
-    margin: 0,
-    color: '#a3a3a3',
-    fontSize: '16px',
-  },
-
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-    gap: '24px',
-  },
-
-  card: {
-    padding: '32px',
-    border: '1px solid #2c2c2c',
-    borderRadius: '16px',
-    backgroundColor: '#121212',
-  },
-
-  icon: {
-    width: '52px',
-    height: '52px',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: '24px',
-    borderRadius: '50%',
-    backgroundColor: '#ffffff',
-    color: '#000000',
-    fontWeight: 800,
-  },
-
-  cardTitle: {
-    margin: '0 0 10px',
-    fontSize: '24px',
-  },
-
-  cardDescription: {
-    minHeight: '48px',
-    margin: '0 0 24px',
-    color: '#a3a3a3',
-    lineHeight: 1.6,
-  },
-
-  actions: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '12px',
-  },
-
-  primaryButton: {
-    padding: '13px 18px',
-    borderRadius: '8px',
-    backgroundColor: '#ffffff',
-    color: '#000000',
-    fontWeight: 700,
-    textAlign: 'center' as const,
-    textDecoration: 'none',
-  },
-
-  secondaryButton: {
-    padding: '13px 18px',
-    border: '1px solid #444444',
-    borderRadius: '8px',
-    backgroundColor: 'transparent',
-    color: '#ffffff',
-    fontWeight: 700,
-    textAlign: 'center' as const,
-    textDecoration: 'none',
-  },
-
-  note: {
-    margin: '18px 0 0',
-    color: '#777777',
-    fontSize: '13px',
-    lineHeight: 1.5,
-  },
-
-  adminText: {
-    marginTop: '32px',
-    color: '#888888',
-    textAlign: 'center' as const,
-  },
-
-  adminLink: {
-    color: '#ffffff',
-    fontWeight: 700,
-  },
 }
