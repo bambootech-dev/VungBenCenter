@@ -1,21 +1,13 @@
 import type { Metadata } from 'next'
-import { ArrowRight, Clock, Plus } from 'lucide-react'
 import Link from 'next/link'
 import React from 'react'
 
-import { cn } from '@/utilities/ui'
+import { EmptyState } from '@/components/EmptyState'
+import { PageHeader } from '@/components/PageHeader'
 import { requireActiveTeacher } from '@/utilities/requireActiveTeacher'
 import { readSubtitle } from '@/worksheetTemplates/snapshot'
 
-import { EmptyState } from '../_components/EmptyState'
-import {
-  cardClass,
-  formatDateTime,
-  pageTitleClass,
-  pillClass,
-  primaryButtonClass,
-  secondaryButtonClass,
-} from '../_components/teacherUi'
+import { formatDateTime } from '../_components/teacherUi'
 
 export const metadata: Metadata = {
   title: 'Phiếu',
@@ -45,66 +37,59 @@ export default async function WorksheetHomePage() {
   })
 
   return (
-    <main className="flex-1">
-      <div className="lesson-container py-10 md:py-14">
-        <p className={`${pillClass} mb-3`}>Giáo viên</p>
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className={pageTitleClass}>Phiếu</h1>
-            <p className="mt-2 text-base font-semibold text-lesson-muted">
-              Bấm “Tạo phiếu” để chọn mẫu và điền phiếu mới.
-            </p>
-          </div>
-          <Link className={cn(primaryButtonClass, 'self-start sm:self-auto')} href="/giaovien/phieu/moi">
-            <Plus aria-hidden="true" className="size-5" strokeWidth={3} />
+    <div className="container py-5">
+      <PageHeader
+        actions={
+          <Link className="btn btn-primary btn-lg" href="/giaovien/phieu/moi">
+            <i aria-hidden="true" className="bi bi-plus-lg me-2" />
             Tạo phiếu
           </Link>
-        </div>
+        }
+        eyebrow="Giáo viên"
+        lead="Bấm “Tạo phiếu” để chọn mẫu và điền phiếu mới."
+        title="Phiếu"
+      />
 
-        <h2 className="mb-4 text-xl font-extrabold text-lesson-primary-dark">Phiếu nộp gần đây</h2>
+      <h2 className="h4 mb-3">Phiếu nộp gần đây</h2>
 
-        {recent.docs.length === 0 ? (
-          <EmptyState message="Bạn chưa nộp phiếu nào." testId="recent-submissions-empty" />
-        ) : (
-          <>
-            <ul className="space-y-3" data-testid="recent-submissions">
-              {recent.docs.map((submission) => {
-                const title = submission.title ?? submission.worksheetSnapshot?.title ?? 'Phiếu'
-                const subtitle = readSubtitle(submission.templateSnapshot, submission.data)
+      {recent.docs.length === 0 ? (
+        <EmptyState message="Bạn chưa nộp phiếu nào." testId="recent-submissions-empty" />
+      ) : (
+        <>
+          <ul className="list-group shadow-sm" data-testid="recent-submissions">
+            {recent.docs.map((submission) => {
+              const title = submission.title ?? submission.worksheetSnapshot?.title ?? 'Phiếu'
+              const subtitle = readSubtitle(submission.templateSnapshot, submission.data)
 
-                return (
-                  <li key={submission.id}>
-                    <Link
-                      className={cn(
-                        cardClass,
-                        'flex items-center justify-between gap-4 p-4 transition hover:border-lesson-primary/40 focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-lesson-primary-dark sm:p-5',
-                      )}
-                      href={`/giaovien/bai-da-nop/${submission.id}`}
-                    >
-                      <span>
-                        <span className="block font-extrabold text-lesson-primary-dark">{title}</span>
-                        <span className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm font-bold text-lesson-muted">
-                          {subtitle && <span>{subtitle}</span>}
-                          <span className="inline-flex items-center gap-1.5">
-                            <Clock aria-hidden="true" className="size-4" strokeWidth={2.5} />
-                            <time dateTime={submission.submittedAt}>{formatDateTime(submission.submittedAt)}</time>
-                          </span>
+              return (
+                <li className="list-group-item p-0" key={submission.id}>
+                  <Link
+                    className="list-group-item-action d-flex align-items-center justify-content-between gap-3 px-4 py-3 text-decoration-none"
+                    href={`/giaovien/bai-da-nop/${submission.id}`}
+                  >
+                    <span>
+                      <span className="d-block fw-bolder text-primary-emphasis">{title}</span>
+                      <span className="d-flex flex-wrap column-gap-3 small fw-semibold text-body-secondary mt-1">
+                        {subtitle && <span>{subtitle}</span>}
+                        <span>
+                          <i aria-hidden="true" className="bi bi-clock me-1" />
+                          <time dateTime={submission.submittedAt}>{formatDateTime(submission.submittedAt)}</time>
                         </span>
                       </span>
-                      <ArrowRight aria-hidden="true" className="size-5 shrink-0 text-lesson-primary" strokeWidth={2.75} />
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
-            {recent.totalDocs > RECENT_LIMIT && (
-              <Link className={cn(secondaryButtonClass, 'mt-5')} href="/giaovien/bai-da-nop">
-                Xem tất cả bài đã nộp
-              </Link>
-            )}
-          </>
-        )}
-      </div>
-    </main>
+                    </span>
+                    <i aria-hidden="true" className="bi bi-chevron-right text-primary" />
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+          {recent.totalDocs > RECENT_LIMIT && (
+            <Link className="btn btn-outline-primary mt-4" href="/giaovien/bai-da-nop">
+              Xem tất cả bài đã nộp
+            </Link>
+          )}
+        </>
+      )}
+    </div>
   )
 }

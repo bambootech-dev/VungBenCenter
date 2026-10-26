@@ -1,14 +1,12 @@
 import type { Metadata } from 'next'
-import { ArrowRight, ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import React from 'react'
 
-import { cn } from '@/utilities/ui'
+import { BackLink } from '@/components/BackLink'
+import { PageHeader } from '@/components/PageHeader'
 import { requireActiveTeacher } from '@/utilities/requireActiveTeacher'
 import { WORKSHEET_TEMPLATES } from '@/worksheetTemplates/definitions'
-
-import { cardClass, focusRing, pageTitleClass, pillClass, primaryButtonClass } from '../../_components/teacherUi'
 
 export const metadata: Metadata = {
   title: 'Tạo phiếu',
@@ -23,43 +21,32 @@ export default async function ChooseTemplatePage() {
   }
 
   return (
-    <main className="flex-1">
-      <div className="lesson-container py-6 md:py-10">
-        <Link
-          className={cn(
-            'mb-5 inline-flex min-h-11 items-center gap-1 rounded-full pr-3 text-base font-bold text-lesson-primary-dark hover:underline',
-            focusRing,
-          )}
-          href="/giaovien/phieu"
-        >
-          <ChevronLeft aria-hidden="true" className="size-5" />
-          Phiếu
-        </Link>
+    <div className="container py-4 py-md-5">
+      <BackLink href="/giaovien/phieu">Phiếu</BackLink>
+      <PageHeader eyebrow="Tạo phiếu" title="Chọn mẫu phiếu" />
 
-        <p className={`${pillClass} mb-3`}>Tạo phiếu</p>
-        <h1 className={`${pageTitleClass} mb-8`}>Chọn mẫu phiếu</h1>
-
-        <ul className="grid gap-5 md:grid-cols-2" data-testid="template-list">
-          {WORKSHEET_TEMPLATES.map((template) => (
-            <li key={template.code}>
-              <article className={cn(cardClass, 'flex h-full flex-col gap-4 p-6')} data-testid="template-card">
-                <div className="flex-1">
-                  <h2 className="text-xl font-extrabold text-lesson-primary-dark">{template.title}</h2>
-                  <p className="mt-2 text-base font-semibold text-lesson-muted">{template.description}</p>
+      <ul className="row row-cols-1 row-cols-md-2 g-4 list-unstyled mb-0" data-testid="template-list">
+        {WORKSHEET_TEMPLATES.map((template) => (
+          <li className="col" key={template.code}>
+            <article className="card h-100 shadow-sm" data-testid="template-card">
+              <div className="card-body d-flex flex-column gap-3 p-4">
+                <div className="flex-grow-1">
+                  <h2 className="h4">{template.title}</h2>
+                  <p className="text-body-secondary mb-0">{template.description}</p>
                 </div>
                 <Link
                   aria-label={`Điền ${template.title}`}
-                  className={cn(primaryButtonClass, 'self-start')}
+                  className="btn btn-primary align-self-start"
                   href={`/giaovien/phieu/moi/${template.code}`}
                 >
                   Điền phiếu này
-                  <ArrowRight aria-hidden="true" className="size-5" strokeWidth={2.75} />
+                  <i aria-hidden="true" className="bi bi-arrow-right ms-2" />
                 </Link>
-              </article>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </main>
+              </div>
+            </article>
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }

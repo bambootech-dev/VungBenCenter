@@ -2,27 +2,21 @@
 
 import React from 'react'
 
-import { primaryButtonClass } from './_components/teacherUi'
 
 // Không hiển thị error.message: lỗi từ server có thể chứa chi tiết kỹ thuật
 export default function Error({ retry }: { error: Error & { digest?: string }; retry: () => void }) {
   return (
-    <main className="flex-1">
-      <div className="lesson-container py-10 md:py-14">
-        <div
-          className="rounded-3xl border-2 border-red-200 bg-lesson-surface p-8 text-center"
-          data-testid="teacher-load-error"
-          role="alert"
-        >
-          <p className="text-xl font-extrabold text-lesson-primary-dark">Không tải được dữ liệu.</p>
-          <p className="mt-2 text-base font-semibold text-lesson-muted">
-            Vui lòng kiểm tra kết nối mạng rồi thử lại.
-          </p>
-          <button className={`${primaryButtonClass} mt-6`} onClick={() => retry()} type="button">
+    <div className="container py-5">
+      <div className="card shadow-sm border-danger-subtle" data-testid="teacher-load-error" role="alert">
+        <div className="card-body text-center p-5">
+          <i aria-hidden="true" className="bi bi-wifi-off display-5 text-danger" />
+          <p className="h4 mt-3 mb-2">Không tải được dữ liệu.</p>
+          <p className="text-body-secondary mb-4">Vui lòng kiểm tra kết nối mạng rồi thử lại.</p>
+          <button className="btn btn-primary btn-lg" onClick={() => retry()} type="button">
             Thử lại
           </button>
         </div>
       </div>
-    </main>
+    </div>
   )
 }

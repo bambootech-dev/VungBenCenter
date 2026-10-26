@@ -1,13 +1,4 @@
-// Lớp CSS thương hiệu dùng chung nằm ở components/ui/brand; ở đây thêm các tiện ích của khu vực Giáo viên
-
-export {
-  cardClass,
-  focusRing,
-  pageTitleClass,
-  pillClass,
-  primaryButtonClass,
-  secondaryButtonClass,
-} from '@/components/ui/brand'
+// Tiện ích dùng chung của khu vực Giáo viên
 
 // Thời gian nộp hiển thị theo giờ Việt Nam, không phụ thuộc múi giờ của server
 const dateTimeFormat = new Intl.DateTimeFormat('vi-VN', {
