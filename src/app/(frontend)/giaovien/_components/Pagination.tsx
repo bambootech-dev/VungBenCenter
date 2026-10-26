@@ -1,10 +1,6 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import clsx from 'clsx'
 import Link from 'next/link'
 import React from 'react'
-
-import { cn } from '@/utilities/ui'
-
-import { secondaryButtonClass } from './teacherUi'
 
 type Props = {
   basePath: string
@@ -14,40 +10,40 @@ type Props = {
 
 const pageHref = (basePath: string, page: number) => (page > 1 ? `${basePath}?page=${page}` : basePath)
 
+const PageLink = ({ children, href }: { children: React.ReactNode; href: string | null }) => (
+  <li className={clsx('page-item', !href && 'disabled')}>
+    {href ? (
+      <Link className="page-link d-flex align-items-center gap-1" href={href}>
+        {children}
+      </Link>
+    ) : (
+      <span aria-disabled="true" className="page-link d-flex align-items-center gap-1">
+        {children}
+      </span>
+    )}
+  </li>
+)
+
 export const Pagination = ({ basePath, page, totalPages }: Props) => {
   if (totalPages <= 1) return null
 
-  const disabled = 'pointer-events-none opacity-45'
-
   return (
-    <nav aria-label="Phân trang" className="mt-8 flex items-center justify-between gap-3">
-      {page > 1 ? (
-        <Link className={secondaryButtonClass} href={pageHref(basePath, page - 1)}>
-          <ChevronLeft aria-hidden="true" className="size-5" strokeWidth={2.75} />
+    <nav aria-label="Phân trang" className="mt-4">
+      <ul className="pagination pagination-lg justify-content-between align-items-center mb-0">
+        <PageLink href={page > 1 ? pageHref(basePath, page - 1) : null}>
+          <i aria-hidden="true" className="bi bi-chevron-left" />
           Trang trước
-        </Link>
-      ) : (
-        <span aria-disabled="true" className={cn(secondaryButtonClass, disabled)}>
-          <ChevronLeft aria-hidden="true" className="size-5" strokeWidth={2.75} />
-          Trang trước
-        </span>
-      )}
+        </PageLink>
 
-      <p className="text-base font-bold text-lesson-muted">
-        Trang {Math.min(page, totalPages)} / {totalPages}
-      </p>
+        <li className="fw-bold text-body-secondary">
+          Trang {Math.min(page, totalPages)} / {totalPages}
+        </li>
 
-      {page < totalPages ? (
-        <Link className={secondaryButtonClass} href={pageHref(basePath, page + 1)}>
+        <PageLink href={page < totalPages ? pageHref(basePath, page + 1) : null}>
           Trang sau
-          <ChevronRight aria-hidden="true" className="size-5" strokeWidth={2.75} />
-        </Link>
-      ) : (
-        <span aria-disabled="true" className={cn(secondaryButtonClass, disabled)}>
-          Trang sau
-          <ChevronRight aria-hidden="true" className="size-5" strokeWidth={2.75} />
-        </span>
-      )}
+          <i aria-hidden="true" className="bi bi-chevron-right" />
+        </PageLink>
+      </ul>
     </nav>
   )
 }

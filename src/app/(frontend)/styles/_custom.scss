@@ -1,0 +1,233 @@
+// Chỉ những gì Bootstrap không có sẵn. Màu luôn lấy từ biến CSS của Bootstrap (--bs-*) để theo color mode.
+
+// Card là một liên kết: nhấc nhẹ khi hover, viền focus quanh cả card
+.card-hover {
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+
+  &:hover {
+    border-color: var(--bs-primary-border-subtle);
+    box-shadow: var(--bs-box-shadow);
+    transform: translateY(-2px);
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--bs-primary);
+    outline-offset: 3px;
+  }
+
+  .card-img-top img {
+    transition: transform 0.3s ease;
+  }
+
+  &:hover .card-img-top img {
+    transform: scale(1.03);
+  }
+}
+
+// Carousel trang chủ: chiều cao cố định theo màn hình, ảnh phủ kín (object-fit-cover)
+.hero-slide {
+  height: 20rem;
+
+  @include media-breakpoint-up(md) {
+    height: 26rem;
+  }
+
+  @include media-breakpoint-up(lg) {
+    height: 30rem;
+  }
+}
+
+.hero-carousel {
+  .carousel-caption {
+    bottom: 3rem;
+  }
+
+  .hero-caption {
+    max-width: 34rem;
+  }
+}
+
+.hero-carousel-toggle {
+  z-index: 3;
+  top: 1rem;
+  right: 1rem;
+}
+
+// Ô tròn chứa icon/chữ viết tắt (vai trò, mũi tên trên card bài học)
+.icon-circle {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  font-weight: $font-weight-bolder;
+
+  &.icon-circle-sm {
+    width: 2.25rem;
+    height: 2.25rem;
+    font-size: 0.875rem;
+  }
+}
+
+// Dải chọn bước của bài học (giống dải Kindergarten → Year 6 của NG Science): nút tròn ≥ 44px.
+// Mobile (.d-grid): lưới 5 cột (5 + 4); từ sm (.d-sm-flex): một hàng
+.step-nav {
+  grid-template-columns: repeat(5, auto);
+  justify-content: center;
+}
+
+.step-nav .nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border-radius: 50%;
+  background-color: var(--bs-primary-bg-subtle);
+  color: var(--bs-primary-text-emphasis);
+  font-size: 1.125rem;
+  font-weight: $font-weight-bolder;
+
+  &:hover {
+    background-color: var(--bs-primary-border-subtle);
+  }
+
+  // Bước hiện tại: nền đậm + vòng viền, không chỉ dựa vào màu
+  &.active {
+    background-color: var(--bs-primary);
+    color: $white;
+    box-shadow:
+      0 0 0 3px var(--bs-body-bg),
+      0 0 0 6px var(--bs-primary);
+  }
+}
+
+// Thanh tiến độ theo bước (bài học có 9 bước)
+$lesson-step-count: 9;
+
+@for $step from 1 through $lesson-step-count {
+  .w-step-#{$step} {
+    width: percentage(divide($step, $lesson-step-count));
+  }
+}
+
+// Vùng nội dung bước giữ chiều cao tối thiểu để nút Trước/Tiếp không nhảy chỗ
+.lesson-min-h {
+  min-height: 14rem;
+}
+
+// Giữ xuống dòng của câu trả lời/ghi chú do người dùng nhập
+.text-pre-line {
+  white-space: pre-line;
+}
+
+// Độ rộng tối thiểu của cột trong bảng nhập phiếu (bảng cuộn ngang trong .table-responsive)
+.cell-w-xs {
+  min-width: 3rem;
+}
+
+.cell-w-sm {
+  min-width: 5rem;
+}
+
+.cell-w-lg {
+  min-width: 14rem;
+}
+
+// Ảnh minh họa của card bài học khi chưa có thumbnail
+.lesson-thumb-placeholder {
+  background: linear-gradient(135deg, var(--bs-primary-bg-subtle), var(--bs-accent-bg-subtle));
+}
+
+// Rich Text của từng bước: chữ lớn, dễ đọc cho trẻ nhỏ
+.lesson-prose {
+  font-size: 1.25rem;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+
+  > :last-child {
+    margin-bottom: 0;
+  }
+
+  h1 {
+    font-size: 2.25rem;
+  }
+
+  h2 {
+    font-size: 1.875rem;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+  }
+
+  h4 {
+    font-size: 1.25rem;
+  }
+
+  li + li {
+    margin-top: 0.375rem;
+  }
+
+  li::marker {
+    color: var(--bs-primary);
+    font-weight: $font-weight-bold;
+  }
+
+  a {
+    font-weight: $font-weight-bold;
+  }
+
+  strong {
+    font-weight: $font-weight-bolder;
+  }
+
+  blockquote {
+    padding-left: 1rem;
+    border-left: 4px solid var(--bs-border-color);
+    color: var(--bs-secondary-color);
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--bs-border-radius-lg);
+  }
+
+  @include media-breakpoint-down(md) {
+    font-size: 1.125rem;
+
+    h1 {
+      font-size: 1.875rem;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+    }
+
+    h3 {
+      font-size: 1.25rem;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-hover,
+  .card-hover .card-img-top img {
+    transition: none;
+  }
+
+  .card-hover:hover,
+  .card-hover:hover .card-img-top img {
+    transform: none;
+  }
+}

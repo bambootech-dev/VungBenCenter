@@ -23,32 +23,30 @@ export const LessonThumbnail = ({ eager = false, sound, url }: Props) => {
   if (url && !failed) {
     // Ảnh chỉ minh họa: tên bài bên dưới đã là tên của link
     return (
-      <span className="relative block aspect-[16/10] overflow-hidden bg-lesson-primary-soft">
+      <span className="card-img-top d-block ratio ratio-16x10 overflow-hidden bg-primary-subtle">
         <Image
           alt=""
-          className="object-cover transition duration-300 group-hover:scale-[1.03] motion-reduce:group-hover:scale-100"
+          className="object-fit-cover"
           data-testid="lesson-thumbnail-image"
           fill
           loading={eager ? 'eager' : 'lazy'}
           onError={() => setFailed(true)}
           ref={checkAlreadyFailed}
-          sizes="(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw"
+          sizes="(min-width: 1200px) 360px, (min-width: 576px) 50vw, 100vw"
           src={url}
         />
       </span>
     )
   }
 
-  // Không có ảnh hoặc ảnh lỗi: hiển thị chính âm đó cỡ lớn trên nền gradient xanh nhạt
+  // Không có ảnh hoặc ảnh lỗi: hiển thị chính âm đó cỡ lớn trên nền gradient nhạt
   return (
     <span
       aria-hidden="true"
-      className="relative flex aspect-[16/10] items-center justify-center overflow-hidden bg-gradient-to-br from-lesson-primary-soft via-lesson-page to-lesson-accent/40"
+      className="card-img-top d-block ratio ratio-16x10 lesson-thumb-placeholder"
       data-testid="lesson-thumbnail-placeholder"
     >
-      <span className="absolute -right-6 -top-6 size-24 rounded-full bg-lesson-accent/60" />
-      <span className="absolute -bottom-10 -left-8 h-24 w-48 rounded-[50%] bg-lesson-border/70" />
-      <span className="relative text-7xl font-extrabold text-lesson-primary drop-shadow-[0_3px_0_rgb(255_255_255/0.9)]">
+      <span className="d-flex align-items-center justify-content-center display-2 fw-bolder text-primary">
         {sound}
       </span>
     </span>

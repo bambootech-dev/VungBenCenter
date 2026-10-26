@@ -1,15 +1,14 @@
 import type { Metadata } from 'next'
-import { CheckCircle2, ChevronLeft, Clock, UserRound } from 'lucide-react'
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import React from 'react'
 
-import { cn } from '@/utilities/ui'
+import { BackLink } from '@/components/BackLink'
+import { PageHeader } from '@/components/PageHeader'
 import { TemplateValuesView } from '@/components/WorksheetTemplate/TemplateValuesView'
 import { requireActiveTeacher } from '@/utilities/requireActiveTeacher'
 import { readTemplateSnapshot, readTemplateValues } from '@/worksheetTemplates/snapshot'
 
-import { cardClass, focusRing, formatDateTime, pageTitleClass, pillClass } from '../../_components/teacherUi'
+import { formatDateTime } from '../../_components/teacherUi'
 
 export const metadata: Metadata = {
   title: 'Bài đã nộp',
@@ -59,106 +58,76 @@ export default async function SubmissionDetailPage({ params, searchParams }: Pro
   const answers = new Map((submission.answers ?? []).map((answer) => [answer.questionKey, answer.value]))
 
   return (
-    <main className="flex-1">
-      <div className="lesson-container py-6 md:py-10">
-        <div className={cn('mx-auto', template ? 'max-w-6xl' : 'max-w-3xl')}>
-          <Link
-            className={cn(
-              'mb-5 inline-flex min-h-11 items-center gap-1 rounded-full pr-3 text-base font-bold text-lesson-primary-dark hover:underline',
-              focusRing,
-            )}
-            href="/giaovien/bai-da-nop"
-          >
-            <ChevronLeft aria-hidden="true" className="size-5" />
-            Bài đã nộp
-          </Link>
+    <div className="container py-4 py-md-5">
+      <BackLink href="/giaovien/bai-da-nop">Bài đã nộp</BackLink>
 
-          {justSubmitted && (
-            <div
-              className="mb-6 flex items-center gap-3 rounded-2xl border-2 border-lesson-primary/40 bg-lesson-primary-soft p-4 text-base font-bold text-lesson-primary-dark"
-              data-testid="submission-success"
-              role="status"
-            >
-              <CheckCircle2 aria-hidden="true" className="size-6 shrink-0 text-lesson-primary" />
-              Đã nộp phiếu thành công.
-            </div>
-          )}
+      {justSubmitted && (
+        <div className="alert alert-success d-flex align-items-center gap-2 mt-2" data-testid="submission-success" role="status">
+          <i aria-hidden="true" className="bi bi-check-circle-fill fs-5" />
+          Đã nộp phiếu thành công.
+        </div>
+      )}
 
-          <header className="mb-6">
-            <p className={`${pillClass} mb-3`}>Bài đã nộp</p>
-            <h1 className={pageTitleClass} data-testid="submission-title">
-              {title}
-            </h1>
-            <dl className="mt-4 flex flex-col gap-2 text-base font-bold text-lesson-muted sm:flex-row sm:gap-6">
-              <div className="inline-flex items-center gap-1.5">
-                <dt className="inline-flex items-center gap-1.5">
-                  <UserRound aria-hidden="true" className="size-5" strokeWidth={2.5} />
-                  Người nộp:
-                </dt>
-                <dd className="text-lesson-primary-dark" data-testid="submission-teacher">
-                  {teacherName}
-                </dd>
-              </div>
-              <div className="inline-flex items-center gap-1.5">
-                <dt className="inline-flex items-center gap-1.5">
-                  <Clock aria-hidden="true" className="size-5" strokeWidth={2.5} />
-                  Nộp lúc:
-                </dt>
-                <dd className="text-lesson-primary-dark" data-testid="submission-time">
-                  <time dateTime={submission.submittedAt}>{formatDateTime(submission.submittedAt)}</time>
-                </dd>
-              </div>
-            </dl>
-          </header>
+      <PageHeader className="mb-3" eyebrow="Bài đã nộp" title={title} titleTestId="submission-title" />
 
-          {template && (
-            <TemplateValuesView
-              teacherName={teacherName}
-              template={template}
-              values={readTemplateValues(submission.data)}
-            />
-          )}
+      <dl className="d-flex flex-column flex-sm-row gap-2 column-gap-sm-4 fw-bold text-body-secondary mb-4">
+        <div className="d-flex gap-2">
+          <dt className="fw-bold">
+            <i aria-hidden="true" className="bi bi-person-fill me-1" />
+            Người nộp:
+          </dt>
+          <dd className="text-body-emphasis mb-0" data-testid="submission-teacher">
+            {teacherName}
+          </dd>
+        </div>
+        <div className="d-flex gap-2">
+          <dt className="fw-bold">
+            <i aria-hidden="true" className="bi bi-clock-fill me-1" />
+            Nộp lúc:
+          </dt>
+          <dd className="text-body-emphasis mb-0" data-testid="submission-time">
+            <time dateTime={submission.submittedAt}>{formatDateTime(submission.submittedAt)}</time>
+          </dd>
+        </div>
+      </dl>
 
-          {!template && snapshot?.instructions && (
-            <section aria-label="Hướng dẫn" className={cn(cardClass, 'mb-6 p-5 sm:p-6')}>
-              <h2 className="mb-2 text-lg font-extrabold text-lesson-primary-dark">Hướng dẫn</h2>
-              <p className="whitespace-pre-line text-base font-semibold text-lesson-muted">
-                {snapshot.instructions}
-              </p>
+      {template && (
+        <TemplateValuesView teacherName={teacherName} template={template} values={readTemplateValues(submission.data)} />
+      )}
+
+      {!template && (
+        <div className="col-lg-9">
+          {snapshot?.instructions && (
+            <section aria-label="Hướng dẫn" className="card card-body shadow-sm mb-4">
+              <h2 className="h5">Hướng dẫn</h2>
+              <p className="text-body-secondary text-pre-line mb-0">{snapshot.instructions}</p>
             </section>
           )}
 
-          {!template && (
-          <ol className="space-y-5" data-testid="submission-answers">
+          <ol className="list-unstyled d-grid gap-4 mb-0" data-testid="submission-answers">
             {(snapshot?.questions ?? []).map((question, index) => {
               const answer = answers.get(question.key)
 
               return (
-                <li className={cn(cardClass, 'p-5 sm:p-6')} data-question-key={question.key} key={question.key}>
-                  <h2 className="mb-3 text-lg font-extrabold text-lesson-primary-dark">
-                    <span className="mr-2 text-lesson-primary">{index + 1}.</span>
+                <li className="card card-body shadow-sm" data-question-key={question.key} key={question.key}>
+                  <h2 className="h5 mb-3">
+                    <span className="text-primary me-2">{index + 1}.</span>
                     {question.label}
                     {question.required && (
                       <>
-                        <span aria-hidden="true" className="ml-1 text-red-700">
+                        <span aria-hidden="true" className="text-danger ms-1">
                           *
                         </span>
-                        <span className="sr-only"> (bắt buộc)</span>
+                        <span className="visually-hidden"> (bắt buộc)</span>
                       </>
                     )}
                   </h2>
                   {answer ? (
-                    <p
-                      className="whitespace-pre-line break-words rounded-2xl bg-lesson-page p-4 text-base font-semibold text-lesson-primary-dark"
-                      data-testid="submission-answer"
-                    >
+                    <p className="bg-body-tertiary rounded p-3 text-pre-line text-break mb-0" data-testid="submission-answer">
                       {answer}
                     </p>
                   ) : (
-                    <p
-                      className="rounded-2xl border-2 border-dashed border-lesson-border p-4 text-base font-bold italic text-lesson-muted"
-                      data-testid="submission-no-answer"
-                    >
+                    <p className="border rounded p-3 fst-italic text-body-secondary mb-0" data-testid="submission-no-answer">
                       Không trả lời
                     </p>
                   )}
@@ -166,9 +135,8 @@ export default async function SubmissionDetailPage({ params, searchParams }: Pro
               )
             })}
           </ol>
-          )}
         </div>
-      </div>
-    </main>
+      )}
+    </div>
   )
 }

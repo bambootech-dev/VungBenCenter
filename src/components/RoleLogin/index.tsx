@@ -3,15 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { FormEvent, useState } from 'react'
 
-import {
-  cardClass,
-  errorAlertClass,
-  inputClass,
-  labelClass,
-  pageTitleClass,
-  pillClass,
-  primaryButtonClass,
-} from '@/components/ui/brand'
+import { AuthCard } from '@/components/AuthCard'
 
 type LoginRole = 'giaovien' | 'hocsinh'
 
@@ -93,53 +85,46 @@ export function RoleLogin({
   }
 
   return (
-    <main className="flex flex-1 items-center justify-center px-4 py-12 md:py-20">
-      <form className={`${cardClass} w-full max-w-md p-6 sm:p-8`} onSubmit={handleSubmit}>
-        <p className={`${pillClass} mb-3`}>Vững Bền Center</p>
-        <h1 className={`${pageTitleClass} mb-6`}>{title}</h1>
+    <AuthCard onSubmit={handleSubmit} title={title}>
+      <div className="form-floating mb-3">
+        <input
+          autoComplete="email"
+          className="form-control"
+          id={`${role}-login-email`}
+          onChange={(event) => setEmail(event.target.value)}
+          placeholder="ten@email.com"
+          required
+          type="email"
+          value={email}
+        />
+        <label htmlFor={`${role}-login-email`}>Email</label>
+      </div>
 
-        <div className="space-y-5">
-          <div>
-            <label className={labelClass} htmlFor={`${role}-login-email`}>
-              Email
-            </label>
-            <input
-              autoComplete="email"
-              className={inputClass}
-              id={`${role}-login-email`}
-              onChange={(event) => setEmail(event.target.value)}
-              required
-              type="email"
-              value={email}
-            />
-          </div>
+      <div className="form-floating mb-4">
+        <input
+          autoComplete="current-password"
+          className="form-control"
+          id={`${role}-login-password`}
+          onChange={(event) => setPassword(event.target.value)}
+          placeholder="Mật khẩu"
+          required
+          type="password"
+          value={password}
+        />
+        <label htmlFor={`${role}-login-password`}>Mật khẩu</label>
+      </div>
 
-          <div>
-            <label className={labelClass} htmlFor={`${role}-login-password`}>
-              Mật khẩu
-            </label>
-            <input
-              autoComplete="current-password"
-              className={inputClass}
-              id={`${role}-login-password`}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-              type="password"
-              value={password}
-            />
-          </div>
-
-          {error && (
-            <p className={errorAlertClass} role="alert">
-              {error}
-            </p>
-          )}
-
-          <button className={`${primaryButtonClass} w-full`} disabled={loading} type="submit">
-            {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
-          </button>
+      {error && (
+        <div className="alert alert-danger d-flex gap-2" role="alert">
+          <i aria-hidden="true" className="bi bi-exclamation-circle-fill" />
+          <span>{error}</span>
         </div>
-      </form>
-    </main>
+      )}
+
+      <button className="btn btn-primary btn-lg w-100" disabled={loading} type="submit">
+        {loading && <span aria-hidden="true" className="spinner-border spinner-border-sm me-2" />}
+        {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+      </button>
+    </AuthCard>
   )
 }
