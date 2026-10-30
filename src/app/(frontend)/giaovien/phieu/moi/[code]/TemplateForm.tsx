@@ -7,6 +7,7 @@ import React, { useRef, useState, useTransition } from 'react'
 
 import { submitWorksheet, type SubmitWorksheetResult } from '@/actions/submitWorksheet'
 import { TableHeader } from '@/components/WorksheetTemplate/TableHeader'
+import { useUnsavedChanges } from '@/utilities/unsavedChanges'
 import { rowHeader } from '@/worksheetTemplates/snapshot'
 import type { ScalarField, TableColumn, TableField, WorksheetTemplate } from '@/worksheetTemplates/types'
 import { normalizeTemplateValues } from '@/worksheetTemplates/validate'
@@ -56,6 +57,12 @@ export const TemplateForm = ({ teacherName, template }: Props) => {
   const errorRef = useRef<HTMLDivElement>(null)
 
   const values = () => ({ ...scalars, ...tables })
+
+  // Đã nhập gì đó: hỏi lại trước khi đóng/tải lại thẻ và không để Header tự chuyển trang khi phiên hết hạn
+  const isDirty =
+    Object.values(scalars).some(Boolean) ||
+    Object.values(tables).some((rows) => rows.some((row) => Object.values(row).some(Boolean)))
+  useUnsavedChanges(isDirty)
 
   const clearError = (path: string) => {
     if (errors[path]) setErrors(({ [path]: _removed, ...rest }) => rest)

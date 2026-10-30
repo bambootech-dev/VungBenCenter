@@ -1,11 +1,18 @@
 import { RoleRegister } from '@/components/RoleRegister'
+import { SessionSync } from '@/components/SessionSync'
+import { redirectSignedInUser } from '@/utilities/viewer'
 
-export default function GiaoVienRegisterPage() {
+export default async function GiaoVienRegisterPage() {
+  await redirectSignedInUser()
+
   return (
-    <RoleRegister
-      role="giaovien"
-      title="Đăng ký Giáo viên"
-      loginTo="/login/giaovien"
-    />
+    <>
+      <SessionSync />
+      <RoleRegister
+        role="giaovien"
+        title="Đăng ký Giáo viên"
+        loginTo="/login/giaovien"
+      />
+    </>
   )
 }

@@ -71,7 +71,9 @@ export function RoleLogin({
         )
       }
 
-      router.push(redirectTo)
+      // Cookie HttpOnly do Payload đặt; replace để nút Back không quay lại form đăng nhập,
+      // refresh để layout (Header/Footer) render lại theo phiên mới trên server
+      router.replace(redirectTo)
       router.refresh()
     } catch (err) {
       setError(

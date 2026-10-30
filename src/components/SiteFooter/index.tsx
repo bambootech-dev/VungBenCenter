@@ -1,9 +1,15 @@
+'use client'
+
 import Link from 'next/link'
 import React from 'react'
 
+import { useAuthState } from '@/components/AuthSync'
 import { Logo } from '@/components/Logo/Logo'
+import { LogoutButton } from '@/components/LogoutButton'
 
-const columns = [
+const linkClass = 'link-body-emphasis link-underline-opacity-0 link-underline-opacity-100-hover fw-semibold'
+
+const guestColumns = [
   {
     title: 'Học tập',
     links: [
@@ -22,7 +28,18 @@ const columns = [
   },
 ]
 
+const FooterColumn = ({ children, title }: { children: React.ReactNode; title: string }) => (
+  <nav aria-labelledby={`footer-${title}`} className="col-6 col-lg-3">
+    <h2 className="h6 text-uppercase text-body-secondary fw-bold mb-3" id={`footer-${title}`}>
+      {title}
+    </h2>
+    <ul className="list-unstyled d-grid gap-2 mb-0">{children}</ul>
+  </nav>
+)
+
 export const SiteFooter = () => {
+  const { viewer } = useAuthState()
+
   return (
     <footer className="mt-auto bg-body border-top">
       <div className="container py-5">
@@ -34,22 +51,39 @@ export const SiteFooter = () => {
             </p>
           </div>
 
-          {columns.map((column) => (
-            <nav aria-labelledby={`footer-${column.title}`} className="col-6 col-lg-3" key={column.title}>
-              <h2 className="h6 text-uppercase text-body-secondary fw-bold mb-3" id={`footer-${column.title}`}>
-                {column.title}
-              </h2>
-              <ul className="list-unstyled d-grid gap-2 mb-0">
+          {viewer ? (
+            <>
+              <FooterColumn title="Học tập">
+                <li>
+                  <Link className={linkClass} href="/bai-hoc">
+                    Bài học phát âm
+                  </Link>
+                </li>
+              </FooterColumn>
+              <FooterColumn title="Tài khoản">
+                <li>
+                  <Link className={linkClass} href={viewer.dashboardHref}>
+                    {viewer.dashboardLabel}
+                  </Link>
+                </li>
+                <li>
+                  <LogoutButton className={`btn btn-link p-0 text-decoration-none ${linkClass}`} />
+                </li>
+              </FooterColumn>
+            </>
+          ) : (
+            guestColumns.map((column) => (
+              <FooterColumn key={column.title} title={column.title}>
                 {column.links.map((link) => (
                   <li key={link.href}>
-                    <Link className="link-body-emphasis link-underline-opacity-0 link-underline-opacity-100-hover fw-semibold" href={link.href}>
+                    <Link className={linkClass} href={link.href}>
                       {link.label}
                     </Link>
                   </li>
                 ))}
-              </ul>
-            </nav>
-          ))}
+              </FooterColumn>
+            ))
+          )}
         </div>
 
         <p className="small text-body-secondary border-top pt-4 mt-5 mb-0">

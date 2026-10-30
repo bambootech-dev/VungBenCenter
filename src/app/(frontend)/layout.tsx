@@ -2,16 +2,21 @@ import type { Metadata } from 'next'
 
 import React from 'react'
 
+import { AuthSyncProvider } from '@/components/AuthSync'
 import { SiteFooter } from '@/components/SiteFooter'
 import { SiteHeader } from '@/components/SiteHeader'
 import { getServerSideURL } from '@/utilities/getURL'
+import { getViewer } from '@/utilities/viewer'
 
 import { nunito } from './font'
 
 import 'bootstrap-icons/font/bootstrap-icons.min.css'
 import './styles/main.scss'
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Trạng thái đăng nhập do server xác thực qua Payload; layout vì vậy render động theo cookie
+  const viewer = await getViewer()
+
   return (
     <html className={nunito.variable} data-bs-theme="light" lang="vi">
       <head>
@@ -21,11 +26,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <a className="visually-hidden-focusable btn btn-primary position-absolute top-0 start-0 m-2 z-3" href="#main">
           Bỏ qua, đến nội dung chính
         </a>
-        <SiteHeader />
-        <main className="d-flex flex-column flex-grow-1" id="main" tabIndex={-1}>
-          {children}
-        </main>
-        <SiteFooter />
+        <AuthSyncProvider viewer={viewer}>
+          <SiteHeader />
+          <main className="d-flex flex-column flex-grow-1" id="main" tabIndex={-1}>
+            {children}
+          </main>
+          <SiteFooter />
+        </AuthSyncProvider>
       </body>
     </html>
   )

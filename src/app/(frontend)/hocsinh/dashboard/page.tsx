@@ -1,19 +1,13 @@
-import config from '@payload-config'
-import { headers as getHeaders } from 'next/headers'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { getPayload } from 'payload'
 
+import { AccountStatusNotice } from '@/components/AccountStatusNotice'
 import { PageHeader } from '@/components/PageHeader'
+import { SessionSync } from '@/components/SessionSync'
+import { getCurrentUser } from '@/utilities/getCurrentUser'
 
 export default async function HocSinhDashboardPage() {
-  const payload = await getPayload({ config })
-  const headers = await getHeaders()
-
-  const { user } = await payload.auth({
-    headers,
-    canSetHeaders: false,
-  })
+  const { user } = await getCurrentUser()
 
   if (!user) {
     redirect('/login/hocsinh')
@@ -27,8 +21,19 @@ export default async function HocSinhDashboardPage() {
     redirect('/giaovien/dashboard')
   }
 
+  if (user.accountStatus !== 'active') {
+    return (
+      <AccountStatusNotice
+        eyebrow="Học sinh / Phụ huynh"
+        message="Tài khoản chưa được kích hoạt. Vui lòng liên hệ trung tâm."
+        title="Trang Học sinh / Phụ huynh"
+      />
+    )
+  }
+
   return (
     <div className="container py-5">
+      <SessionSync />
       <PageHeader eyebrow="Học sinh / Phụ huynh" title="Trang Học sinh / Phụ huynh" />
 
       <p className="card card-body fs-5 fw-bold text-primary-emphasis mb-4">

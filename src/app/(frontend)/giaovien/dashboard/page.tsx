@@ -1,19 +1,13 @@
-import config from '@payload-config'
-import { headers as getHeaders } from 'next/headers'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { getPayload } from 'payload'
 
+import { AccountStatusNotice } from '@/components/AccountStatusNotice'
 import { PageHeader } from '@/components/PageHeader'
+import { SessionSync } from '@/components/SessionSync'
+import { getCurrentUser } from '@/utilities/getCurrentUser'
 
 export default async function GiaoVienDashboardPage() {
-  const payload = await getPayload({ config })
-  const headers = await getHeaders()
-
-  const { user } = await payload.auth({
-    headers,
-    canSetHeaders: false,
-  })
+  const { user } = await getCurrentUser()
 
   if (!user) {
     redirect('/login/giaovien')
@@ -27,8 +21,20 @@ export default async function GiaoVienDashboardPage() {
     redirect('/hocsinh/dashboard')
   }
 
+  // Giáo viên chưa được Admin duyệt (vd. bị chuyển về pending khi phiên còn hạn): không xem dashboard
+  if (user.accountStatus !== 'active') {
+    return (
+      <AccountStatusNotice
+        eyebrow="Giáo viên"
+        message="Tài khoản Giáo viên đang chờ Admin phê duyệt."
+        title="Trang Giáo viên"
+      />
+    )
+  }
+
   return (
     <div className="container py-5">
+      <SessionSync />
       <PageHeader eyebrow="Giáo viên" title="Trang Giáo viên" />
 
       <p className="card card-body fs-5 fw-bold text-primary-emphasis mb-4">

@@ -1,6 +1,6 @@
-import Link from 'next/link'
-
 import { RoleCard } from '@/components/RoleCard'
+import { SessionSync } from '@/components/SessionSync'
+import { redirectSignedInUser } from '@/utilities/viewer'
 
 const roles = [
   {
@@ -26,9 +26,12 @@ const roles = [
   },
 ]
 
-export default function AccountPage() {
+export default async function AccountPage() {
+  await redirectSignedInUser()
+
   return (
     <div className="container py-5">
+      <SessionSync />
       <div className="col-lg-8 mx-auto text-center mb-5">
         <p className="badge bg-primary-subtle text-primary-emphasis fs-6 mb-3">Vững Bền Center</p>
         <h1 className="mb-3">Chào mừng bạn</h1>
@@ -42,13 +45,6 @@ export default function AccountPage() {
           </div>
         ))}
       </div>
-
-      <p className="text-center text-body-secondary mt-5 mb-0">
-        Bạn là quản trị viên?{' '}
-        <Link className="fw-bold" href="/admin/login">
-          Đăng nhập Admin
-        </Link>
-      </p>
     </div>
   )
 }

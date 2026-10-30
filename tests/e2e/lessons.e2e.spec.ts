@@ -181,15 +181,16 @@ test.describe('Bài học', () => {
     await expect(page.getByText(stepText('Ch', 3))).toHaveCount(0)
   })
 
-  test('học sinh không active bị chuyển về /login', async ({ page }) => {
+  test('học sinh không active bị chuyển về dashboard có thông báo', async ({ page }) => {
     // Học sinh bị Admin chuyển sang pending vẫn đăng nhập được, nhưng không được xem bài
     await loginAsStudent(page, INACTIVE_STUDENT_EMAIL)
+    await expect(page.getByTestId('account-pending')).toBeVisible()
 
     await page.goto(`${BASE_URL}/bai-hoc`)
-    await expect(page).toHaveURL(`${BASE_URL}/login`)
+    await expect(page).toHaveURL(`${BASE_URL}/hocsinh/dashboard`)
 
     await page.goto(`${BASE_URL}/bai-hoc/${lessonIds[1]}`)
-    await expect(page).toHaveURL(`${BASE_URL}/login`)
+    await expect(page).toHaveURL(`${BASE_URL}/hocsinh/dashboard`)
     await expect(page.getByText('Nội dung âm')).toHaveCount(0)
   })
 

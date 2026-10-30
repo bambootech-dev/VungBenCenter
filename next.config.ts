@@ -48,6 +48,11 @@ const nextConfig: NextConfig = {
     return webpackConfig
   },
   reactStrictMode: true,
+  experimental: {
+    // Trang 404 riêng cho URL không khớp route nào (src/app/global-not-found.tsx):
+    // dự án có hai root layout (frontend và Payload Admin) nên not-found.tsx không bắt được
+    globalNotFound: true,
+  },
   turbopack: {
     root: path.resolve(dirname),
   },

@@ -231,3 +231,8 @@ $lesson-step-count: 9;
     transform: none;
   }
 }
+
+// Tên người dùng trong menu tài khoản của Header: không đẩy vỡ navbar khi tên dài
+.account-name {
+  max-width: 14rem;
+}
