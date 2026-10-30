@@ -72,6 +72,10 @@ export interface Config {
     lessons: Lesson;
     worksheets: Worksheet;
     'worksheet-submissions': WorksheetSubmission;
+    plans: Plan;
+    orders: Order;
+    subscriptions: Subscription;
+    'audit-logs': AuditLog;
     'payload-kv': PayloadKv;
     'payload-folders': FolderInterface;
     'payload-locked-documents': PayloadLockedDocument;
@@ -89,6 +93,10 @@ export interface Config {
     lessons: LessonsSelect<false> | LessonsSelect<true>;
     worksheets: WorksheetsSelect<false> | WorksheetsSelect<true>;
     'worksheet-submissions': WorksheetSubmissionsSelect<false> | WorksheetSubmissionsSelect<true>;
+    plans: PlansSelect<false> | PlansSelect<true>;
+    orders: OrdersSelect<false> | OrdersSelect<true>;
+    subscriptions: SubscriptionsSelect<false> | SubscriptionsSelect<true>;
+    'audit-logs': AuditLogsSelect<false> | AuditLogsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-folders': PayloadFoldersSelect<false> | PayloadFoldersSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -525,6 +533,143 @@ export interface WorksheetSubmission {
   createdAt: string;
 }
 /**
+ * Sửa gói chỉ áp dụng cho đơn đặt sau đó; quyền đã kích hoạt giữ nguyên danh sách bài và thời hạn lúc mua.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "plans".
+ */
+export interface Plan {
+  id: number;
+  name: string;
+  /**
+   * Viết liền, không dấu, ví dụ: am-th, luyen-phat-am-co-ban.
+   */
+  code: string;
+  description?: string | null;
+  kind: 'single' | 'bundle';
+  price: number;
+  currency: 'VND';
+  lessons: (number | Lesson)[];
+  durationType: 'months' | 'lifetime';
+  /**
+   * Tính theo tháng lịch từ lúc kích hoạt (31/01 + 1 tháng = 28 hoặc 29/02).
+   */
+  durationMonths?: number | null;
+  benefits?:
+    | {
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Bật để hiển thị trên trang Gói học và cho phép đặt mua.
+   */
+  isActive?: boolean | null;
+  sortOrder?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Xác nhận thanh toán: mở đơn "Chờ thanh toán", chọn phương thức, nhập mã giao dịch (nếu có), đổi trạng thái sang "Đã thanh toán" rồi lưu. Quyền học được kích hoạt tự động.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders".
+ */
+export interface Order {
+  id: number;
+  title?: string | null;
+  user: number | User;
+  plan: number | Plan;
+  amount?: number | null;
+  currency?: 'VND' | null;
+  status: 'pending' | 'paid' | 'cancelled' | 'refunded';
+  paymentMethod?: ('bank_transfer' | 'cash' | 'other') | null;
+  transactionRef?: string | null;
+  paidAt?: string | null;
+  confirmedBy?: (number | null) | User;
+  planSnapshot?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  note?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Cấp quyền thủ công: tạo mới với nguồn "Admin cấp". Thu hồi: đổi trạng thái sang "Đã thu hồi". Lọc theo Học viên để xem quyền của một tài khoản.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscriptions".
+ */
+export interface Subscription {
+  id: number;
+  title?: string | null;
+  user: number | User;
+  source: 'order' | 'manual';
+  /**
+   * Admin cấp theo gói: để trống "Bài học" và "Ngày hết hạn" để lấy theo gói.
+   */
+  plan?: (number | null) | Plan;
+  order?: (number | null) | Order;
+  lessons?: (number | Lesson)[] | null;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  noExpiry?: boolean | null;
+  /**
+   * "Hết hạn" được tính tự động từ ngày hết hạn, không cần đổi tay.
+   */
+  status: 'active' | 'cancelled' | 'revoked';
+  statusReason?: string | null;
+  state?: string | null;
+  snapshot?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  note?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Ai đã tạo, sửa, xác nhận hoặc thu hồi gì, vào lúc nào. Chỉ đọc.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-logs".
+ */
+export interface AuditLog {
+  id: number;
+  action: 'create' | 'update' | 'delete';
+  targetCollection: string;
+  targetId: string;
+  summary: string;
+  /**
+   * Trống nếu thao tác do hệ thống thực hiện.
+   */
+  actor?: (number | null) | User;
+  actorLabel: string;
+  relatedUser?: (number | null) | User;
+  changes?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -567,6 +712,22 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'worksheet-submissions';
         value: number | WorksheetSubmission;
+      } | null)
+    | ({
+        relationTo: 'plans';
+        value: number | Plan;
+      } | null)
+    | ({
+        relationTo: 'orders';
+        value: number | Order;
+      } | null)
+    | ({
+        relationTo: 'subscriptions';
+        value: number | Subscription;
+      } | null)
+    | ({
+        relationTo: 'audit-logs';
+        value: number | AuditLog;
       } | null)
     | ({
         relationTo: 'payload-folders';
@@ -811,6 +972,89 @@ export interface WorksheetSubmissionsSelect<T extends boolean = true> {
         value?: T;
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "plans_select".
+ */
+export interface PlansSelect<T extends boolean = true> {
+  name?: T;
+  code?: T;
+  description?: T;
+  kind?: T;
+  price?: T;
+  currency?: T;
+  lessons?: T;
+  durationType?: T;
+  durationMonths?: T;
+  benefits?:
+    | T
+    | {
+        text?: T;
+        id?: T;
+      };
+  isActive?: T;
+  sortOrder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders_select".
+ */
+export interface OrdersSelect<T extends boolean = true> {
+  title?: T;
+  user?: T;
+  plan?: T;
+  amount?: T;
+  currency?: T;
+  status?: T;
+  paymentMethod?: T;
+  transactionRef?: T;
+  paidAt?: T;
+  confirmedBy?: T;
+  planSnapshot?: T;
+  note?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscriptions_select".
+ */
+export interface SubscriptionsSelect<T extends boolean = true> {
+  title?: T;
+  user?: T;
+  source?: T;
+  plan?: T;
+  order?: T;
+  lessons?: T;
+  startsAt?: T;
+  endsAt?: T;
+  noExpiry?: T;
+  status?: T;
+  statusReason?: T;
+  state?: T;
+  snapshot?: T;
+  note?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-logs_select".
+ */
+export interface AuditLogsSelect<T extends boolean = true> {
+  action?: T;
+  targetCollection?: T;
+  targetId?: T;
+  summary?: T;
+  actor?: T;
+  actorLabel?: T;
+  relatedUser?: T;
+  changes?: T;
   updatedAt?: T;
   createdAt?: T;
 }

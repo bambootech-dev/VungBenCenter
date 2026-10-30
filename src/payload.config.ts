@@ -4,8 +4,12 @@ import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
 
+import { AuditLogs } from './collections/AuditLogs'
 import { Lessons } from './collections/Lessons'
 import { Media } from './collections/Media'
+import { Orders } from './collections/Orders'
+import { Plans } from './collections/Plans'
+import { Subscriptions } from './collections/Subscriptions'
 import { Users } from './collections/Users'
 import { WorksheetSubmissions } from './collections/WorksheetSubmissions'
 import { Worksheets } from './collections/Worksheets'
@@ -33,7 +37,7 @@ export default buildConfig({
     },
     migrationDir: path.resolve(dirname, 'migrations'),
   }),
-  collections: [Users, Media, Lessons, Worksheets, WorksheetSubmissions],
+  collections: [Users, Media, Lessons, Worksheets, WorksheetSubmissions, Plans, Orders, Subscriptions, AuditLogs],
   cors: [getServerSideURL()].filter(Boolean),
   secret: process.env.PAYLOAD_SECRET,
   sharp,

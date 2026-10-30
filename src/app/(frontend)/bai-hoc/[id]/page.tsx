@@ -3,13 +3,16 @@ import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical
 import { RichText } from '@payloadcms/richtext-lexical/react'
 import clsx from 'clsx'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import React from 'react'
 
 import { formatSoundLabel } from '@/collections/Lessons/sound'
 import { LESSON_STEP_COUNT, LESSON_STEP_KEYS, parseLessonStep } from '@/collections/Lessons/steps'
 import { BackLink } from '@/components/BackLink'
-import { requireActiveUser } from '@/utilities/requireActiveUser'
+import { getCurrentUser } from '@/utilities/getCurrentUser'
+import { hasLesson } from '@/utilities/lessonAccess'
+import { getDashboardHref } from '@/utilities/viewer'
+import { getViewerLessonAccess } from '@/utilities/viewerLessonAccess'
 
 type Props = {
   params: Promise<{ id: string }>
@@ -23,7 +26,12 @@ export const metadata: Metadata = {
 const stepHref = (lessonId: number, step: number) => `/bai-hoc/${lessonId}?step=${step}`
 
 export default async function LessonPage({ params, searchParams }: Props) {
-  const { payload, user } = await requireActiveUser()
+  const { payload, user } = await getCurrentUser()
+
+  // Tài khoản chưa kích hoạt: về trang chính của vai trò (có thông báo), như trước
+  if (user && user.accountStatus !== 'active') {
+    redirect(getDashboardHref(user))
+  }
 
   const { id } = await params
   const step = parseLessonStep((await searchParams).step)
@@ -33,21 +41,34 @@ export default async function LessonPage({ params, searchParams }: Props) {
     notFound()
   }
 
-  const {
-    docs: [lesson],
-  } = await payload.find({
+  const lessonId = Number(id)
+  // Kiểm tra quyền trên server trước khi đọc nội dung; field access của `steps` là lớp bảo vệ thứ hai
+  const unlocked = hasLesson(await getViewerLessonAccess(), lessonId)
+
+  const query = {
     collection: 'lessons',
     depth: 1,
     limit: 1,
     overrideAccess: false,
     pagination: false,
-    user,
-    where: {
-      id: {
-        equals: Number(id),
-      },
-    },
-  })
+    user: user ?? undefined,
+    where: { id: { equals: lessonId } },
+  } as const
+
+  if (!unlocked) {
+    // Chưa có quyền: chỉ đọc tên bài, không đọc nội dung các bước
+    const {
+      docs: [locked],
+    } = await payload.find({ ...query, select: { sound: true } })
+
+    if (!locked) notFound()
+
+    return <LockedLesson isGuest={!user} label={formatSoundLabel(locked.sound)} lessonId={locked.id} />
+  }
+
+  const {
+    docs: [lesson],
+  } = await payload.find(query)
 
   if (!lesson) {
     notFound()
@@ -160,3 +181,41 @@ const StepButton = ({
     </Link>
   )
 }
+
+const LockedLesson = ({ isGuest, label, lessonId }: { isGuest: boolean; label: string; lessonId: number }) => (
+  <div className="container py-4 py-md-5">
+    <div className="col-lg-8 col-xl-6 mx-auto">
+      <BackLink href="/bai-hoc">Danh sách bài học</BackLink>
+
+      <div className="card shadow-sm text-center" data-testid="lesson-locked">
+        <div className="card-body p-4 p-sm-5">
+          <span aria-hidden="true" className="icon-circle bg-accent-subtle text-accent-emphasis mb-3">
+            <i className="bi bi-lock-fill" />
+          </span>
+          <p className="badge bg-primary-subtle text-primary-emphasis fs-6 mb-2">Luyện phát âm</p>
+          <h1 className="mb-3">{label}</h1>
+          <p className="lead fw-bold mb-2">Bạn chưa có quyền truy cập bài học này.</p>
+          <p className="text-body-secondary mb-4">
+            {isGuest
+              ? 'Đăng nhập và mua gói học có bài này để mở khóa nội dung 9 bước.'
+              : 'Mua gói học có bài này để mở khóa nội dung 9 bước. Quyền được mở sau khi trung tâm xác nhận thanh toán.'}
+          </p>
+          <div className="d-flex flex-column flex-sm-row justify-content-center gap-2">
+            <Link className="btn btn-primary btn-lg" href={`/goi-hoc?bai=${lessonId}`}>
+              <i aria-hidden="true" className="bi bi-bag-heart me-2" />
+              Xem gói học
+            </Link>
+            {isGuest && (
+              <Link className="btn btn-outline-primary btn-lg" href="/login">
+                Đăng nhập
+              </Link>
+            )}
+            <Link className="btn btn-outline-secondary btn-lg" href="/bai-hoc">
+              Quay lại danh sách bài học
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)

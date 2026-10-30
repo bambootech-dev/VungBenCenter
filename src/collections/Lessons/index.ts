@@ -6,8 +6,9 @@ import {
   lexicalEditor,
 } from '@payloadcms/richtext-lexical'
 
-import { activeUser } from '../../access/activeUser'
 import { admin } from '../../access/admin'
+import { anyone } from '../../access/anyone'
+import { getRequestLessonAccess, hasLesson } from '../../utilities/lessonAccess'
 import { normalizeSound } from './sound'
 import { LESSON_STEP_KEYS } from './steps'
 
@@ -34,8 +35,9 @@ export const Lessons: CollectionConfig = {
   access: {
     create: admin,
     delete: admin,
-    // Không có fallback công khai: khách không đọc được bài học qua REST, GraphQL hay Local API
-    read: activeUser,
+    // Thông tin công khai (tên âm, thứ tự, ảnh) để giới thiệu; nội dung 9 bước được bảo vệ
+    // bằng field access của `steps` bên dưới (áp dụng cho REST, GraphQL và Local API)
+    read: anyone,
     update: admin,
   },
 
@@ -77,6 +79,15 @@ export const Lessons: CollectionConfig = {
       name: 'steps',
       label: 'Các bước',
       type: 'group',
+      access: {
+        // Chỉ trả nội dung khi người đọc có quyền còn hiệu lực với đúng bài này. Không có `doc`
+        // (ví dụ lọc/sắp xếp theo nội dung bước) thì chỉ người xem được mọi bài mới được dùng.
+        read: async ({ doc, req }) => {
+          const access = await getRequestLessonAccess(req)
+
+          return typeof doc?.id === 'number' ? hasLesson(access, doc.id) : access.all
+        },
+      },
       fields: LESSON_STEP_KEYS.map(stepField),
     },
   ],

@@ -6,8 +6,16 @@ import { PageHeader } from '@/components/PageHeader'
 import { SessionSync } from '@/components/SessionSync'
 import { getCurrentUser } from '@/utilities/getCurrentUser'
 
-export default async function HocSinhDashboardPage() {
-  const { user } = await getCurrentUser()
+import { MyPlans } from './MyPlans'
+
+type Props = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+export default async function HocSinhDashboardPage({ searchParams }: Props) {
+  const { payload, user } = await getCurrentUser()
+  const orderParam = (await searchParams)['don-hang']
+  const newOrderId = typeof orderParam === 'string' && /^\d+$/.test(orderParam) ? Number(orderParam) : null
 
   if (!user) {
     redirect('/login/hocsinh')
@@ -57,7 +65,22 @@ export default async function HocSinhDashboardPage() {
             </div>
           </Link>
         </div>
+        <div className="col">
+          <Link className="card card-hover h-100" href="/goi-hoc">
+            <div className="card-body d-flex align-items-start gap-3 p-4">
+              <span aria-hidden="true" className="icon-circle bg-accent-subtle text-accent-emphasis">
+                <i className="bi bi-bag-heart-fill" />
+              </span>
+              <span>
+                <span className="d-block h5 mb-1">Gói học</span>
+                <span className="text-body-secondary">Mua riêng từng bài hoặc gói nhiều bài theo tháng.</span>
+              </span>
+            </div>
+          </Link>
+        </div>
       </div>
+
+      <MyPlans newOrderId={newOrderId} payload={payload} user={user} />
     </div>
   )
 }

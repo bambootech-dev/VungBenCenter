@@ -92,10 +92,18 @@ const seed = async () => {
     })
     lessonIds.push(lesson.id)
   }
+
+  // Nội dung bài học cần quyền học: cấp cho học sinh active cả hai bài (như Admin cấp thủ công)
+  const student = await payload.find({ collection: 'users', where: { email: { equals: STUDENT_EMAIL } } })
+  await payload.create({
+    collection: 'subscriptions',
+    data: { user: student.docs[0].id, source: 'manual', status: 'active', lessons: lessonIds, noExpiry: true },
+  })
 }
 
 const cleanup = async () => {
   const payload = await getPayload({ config })
+  await payload.db.deleteMany({ collection: 'subscriptions', where: { lessons: { in: lessonIds } } })
 
   await payload.delete({ collection: 'lessons', where: { id: { in: lessonIds } } })
   if (thumbnailId) await payload.delete({ collection: 'media', id: thumbnailId })
@@ -172,13 +180,21 @@ test.describe('Bài học', () => {
   test.beforeAll(seed)
   test.afterAll(cleanup)
 
-  test('khách vào /bai-hoc bị chuyển tới /login', async ({ page }) => {
+  test('khách thấy danh sách bài bị khóa; mở URL bài trực tiếp không thấy nội dung', async ({ page }) => {
     await page.goto(`${BASE_URL}/bai-hoc`)
-    await expect(page).toHaveURL(`${BASE_URL}/login`)
+    const cards = page.getByTestId('lesson-card')
+    await expect(cards).toHaveCount(2)
+    await expect(cards.nth(0)).toHaveAttribute('data-unlocked', 'false')
+    await expect(cards.nth(0)).toHaveAttribute('href', `/goi-hoc?bai=${lessonIds[1]}`)
+    await expect(cards.nth(0)).toContainText('Xem gói học')
 
-    await page.goto(`${BASE_URL}/bai-hoc/${lessonIds[0]}?step=3`)
-    await expect(page).toHaveURL(`${BASE_URL}/login`)
+    const response = await page.goto(`${BASE_URL}/bai-hoc/${lessonIds[0]}?step=3`)
+    await expect(page.getByTestId('lesson-locked')).toContainText('Bạn chưa có quyền truy cập bài học này.')
     await expect(page.getByText(stepText('Ch', 3))).toHaveCount(0)
+    expect(await response!.text()).not.toContain('Nội dung âm')
+    // Trang theo người dùng: không bao giờ cho phép cache công khai (CDN/proxy)
+    expect(response!.headers()['cache-control']).toMatch(/no-(cache|store)/)
+    expect(response!.headers()['cache-control']).not.toContain('public')
   })
 
   test('học sinh không active bị chuyển về dashboard có thông báo', async ({ page }) => {
@@ -186,8 +202,9 @@ test.describe('Bài học', () => {
     await loginAsStudent(page, INACTIVE_STUDENT_EMAIL)
     await expect(page.getByTestId('account-pending')).toBeVisible()
 
+    // Danh sách công khai nhưng mọi bài đều khóa với tài khoản chưa kích hoạt
     await page.goto(`${BASE_URL}/bai-hoc`)
-    await expect(page).toHaveURL(`${BASE_URL}/hocsinh/dashboard`)
+    await expect(page.locator('[data-testid="lesson-card"][data-unlocked="true"]')).toHaveCount(0)
 
     await page.goto(`${BASE_URL}/bai-hoc/${lessonIds[1]}`)
     await expect(page).toHaveURL(`${BASE_URL}/hocsinh/dashboard`)
@@ -195,12 +212,13 @@ test.describe('Bài học', () => {
   })
 
   test('khách gọi API trực tiếp không lấy được nội dung', async ({ request }) => {
+    // Tên âm công khai, nội dung các bước thì không
     const list = await request.get(`${BASE_URL}/api/lessons`)
-    expect(list.status()).toBe(403)
+    expect(list.status()).toBe(200)
     expect(await list.text()).not.toContain('Nội dung âm')
 
     const detail = await request.get(`${BASE_URL}/api/lessons/${lessonIds[0]}`)
-    expect(detail.status()).toBe(403)
+    expect(detail.status()).toBe(200)
     expect(await detail.text()).not.toContain('Nội dung âm')
 
     for (const [method, path] of [
@@ -225,9 +243,6 @@ test.describe('Bài học', () => {
       },
     })
     const body = await graphql.json()
-    expect(body.errors?.length).toBeGreaterThan(0)
-    expect(body.data?.Lessons ?? null).toBeNull()
-    expect(body.data?.Lesson ?? null).toBeNull()
     expect(JSON.stringify(body)).not.toContain('Nội dung âm')
   })
 
@@ -239,8 +254,8 @@ test.describe('Bài học', () => {
 
     const cards = page.getByTestId('lesson-card')
     await expect(cards).toHaveCount(2)
-    await expect(cards.nth(0)).toHaveAccessibleName('Âm Th')
-    await expect(cards.nth(1)).toHaveAccessibleName('Âm Ch')
+    await expect(cards.nth(0)).toHaveAccessibleName(/^Âm Th /)
+    await expect(cards.nth(1)).toHaveAccessibleName(/^Âm Ch /)
     await expect(page.getByText(/Âm\s+Âm/)).toHaveCount(0)
     await expectNoOutOfScopeFeatures(page)
 
@@ -338,13 +353,13 @@ test.describe('Bài học', () => {
     for (const keyword of ['th', 'TH', 'Th', '  th  ', 'Âm Th', 'âm th', '  ÂM TH ']) {
       await search.fill(keyword)
       await expect(cards, `"${keyword}"`).toHaveCount(1)
-      await expect(cards.first()).toHaveAccessibleName('Âm Th')
+      await expect(cards.first()).toHaveAccessibleName(/^Âm Th /)
       await expect(empty).toHaveCount(0)
     }
 
     await search.fill('ch')
     await expect(cards).toHaveCount(1)
-    await expect(cards.first()).toHaveAccessibleName('Âm Ch')
+    await expect(cards.first()).toHaveAccessibleName(/^Âm Ch /)
 
     await search.fill('xyz')
     await expect(cards).toHaveCount(0)
@@ -354,8 +369,8 @@ test.describe('Bài học', () => {
     await search.fill('')
     await expect(empty).toHaveCount(0)
     await expect(cards).toHaveCount(2)
-    await expect(cards.nth(0)).toHaveAccessibleName('Âm Th')
-    await expect(cards.nth(1)).toHaveAccessibleName('Âm Ch')
+    await expect(cards.nth(0)).toHaveAccessibleName(/^Âm Th /)
+    await expect(cards.nth(1)).toHaveAccessibleName(/^Âm Ch /)
 
     await search.fill('   ')
     await expect(cards).toHaveCount(2)

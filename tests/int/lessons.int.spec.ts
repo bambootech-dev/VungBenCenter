@@ -119,6 +119,8 @@ afterAll(async () => {
 })
 
 beforeEach(async () => {
+  await payload.db.deleteMany({ collection: 'audit-logs', where: {} })
+  await payload.db.deleteMany({ collection: 'subscriptions', where: {} })
   await payload.db.deleteMany({ collection: 'lessons', where: {} })
   await payload.db.deleteMany({ collection: 'users', where: {} })
 
@@ -142,32 +144,38 @@ beforeEach(async () => {
   })
 })
 
+// Danh sách bài (tên âm, thứ tự, ảnh) công khai; nội dung 9 bước chỉ trả cho người có quyền
+// (gói học / Admin cấp, Giáo viên active, Admin) — xem thêm tests/int/subscriptions.int.spec.ts
 describe('Khách (chưa đăng nhập)', () => {
-  it('GET /api/lessons không nhận được bài học nào', async () => {
+  it('GET /api/lessons trả tên âm nhưng không có nội dung các bước', async () => {
     const response = await rest('/lessons')
     const text = await response.text()
 
-    expect(response.status).toBe(403)
-    expect(JSON.parse(text).docs).toBeUndefined()
+    expect(response.status).toBe(200)
+    expect(JSON.parse(text).docs.map((doc: Lesson) => doc.sound)).toEqual(['tr'])
     expect(text).not.toContain(SECRET_CONTENT)
-    expect(text).not.toContain('"sound"')
+    expect(text).not.toContain('"steps"')
   })
 
-  it('GET /api/lessons/:id không nhận được bài học', async () => {
+  it('GET /api/lessons/:id không có nội dung các bước', async () => {
     const response = await rest(`/lessons/${lesson.id}`)
     const text = await response.text()
 
-    expect(response.status).toBe(403)
+    expect(response.status).toBe(200)
     expect(text).not.toContain(SECRET_CONTENT)
-    expect(text).not.toContain('"sound"')
+    expect(text).not.toContain('"steps"')
   })
 
-  it('không lấy được bài học bằng ?depth, ?select hay ?where', async () => {
-    for (const query of ['?depth=2', '?select[sound]=true', `?where[id][equals]=${lesson.id}`]) {
+  it('không lấy được nội dung bằng ?depth, ?select hay ?where', async () => {
+    for (const query of [
+      '?depth=2',
+      '?select[steps]=true',
+      `?where[id][equals]=${lesson.id}`,
+      `?where[steps.step1][exists]=true`,
+    ]) {
       const response = await rest(`/lessons${query}`)
       const text = await response.text()
 
-      expect(response.status).toBe(403)
       expect(text).not.toContain(SECRET_CONTENT)
     }
   })
@@ -178,16 +186,15 @@ describe('Khách (chưa đăng nhập)', () => {
       Lesson(id: ${lesson.id}) { id sound steps { step1 step9 } }
     }`)
     const text = await response.text()
-    const body = JSON.parse(text)
 
-    expect(body.errors?.length).toBeGreaterThan(0)
-    expect(body.data?.Lessons ?? null).toBeNull()
-    expect(body.data?.Lesson ?? null).toBeNull()
     expect(text).not.toContain(SECRET_CONTENT)
   })
 
-  it('Local API với overrideAccess: false và không có user bị từ chối', async () => {
-    await expect(payload.find({ collection: 'lessons', overrideAccess: false })).rejects.toThrow()
+  it('Local API với overrideAccess: false và không có user không có nội dung các bước', async () => {
+    const { docs } = await payload.find({ collection: 'lessons', overrideAccess: false })
+
+    expect(docs.map((doc) => doc.sound)).toEqual(['tr'])
+    expect(JSON.stringify(docs)).not.toContain(SECRET_CONTENT)
   })
 
   it('không create/update/delete được bài học qua REST', async () => {
@@ -241,21 +248,28 @@ describe('Học sinh không active', () => {
     })
 
     const response = await rest(`/lessons/${lesson.id}`, { token })
-    const text = await response.text()
-    expect(response.status).toBe(403)
-    expect(text).not.toContain(SECRET_CONTENT)
+    expect(await response.text()).not.toContain(SECRET_CONTENT)
 
-    await expect(
-      payload.find({
-        collection: 'lessons',
-        overrideAccess: false,
-        user: asUser({ ...student, accountStatus: 'pending' }),
-      }),
-    ).rejects.toThrow()
+    const { docs } = await payload.find({
+      collection: 'lessons',
+      overrideAccess: false,
+      user: asUser({ ...student, accountStatus: 'pending' }),
+    })
+    expect(JSON.stringify(docs)).not.toContain(SECRET_CONTENT)
   })
 })
 
 describe('Học sinh active', () => {
+  // Học sinh chỉ đọc được nội dung khi có quyền học: cấp thủ công một quyền không thời hạn
+  beforeEach(async () => {
+    await payload.create({
+      collection: 'subscriptions',
+      overrideAccess: false,
+      user: asUser(admin),
+      data: { user: student.id, source: 'manual', status: 'active', lessons: [lesson.id], noExpiry: true },
+    })
+  })
+
   it('đọc được danh sách và chi tiết bài học qua REST', async () => {
     const token = await loginToken(student.email)
 
@@ -336,19 +350,17 @@ describe('Học sinh active', () => {
 })
 
 describe('Giáo viên', () => {
-  it('Giáo viên pending không đọc được bài học', async () => {
-    await expect(
-      payload.find({ collection: 'lessons', overrideAccess: false, user: asUser(pendingTeacher) }),
-    ).rejects.toThrow()
+  it('Giáo viên pending không đọc được nội dung bài học', async () => {
+    const { docs } = await payload.find({ collection: 'lessons', overrideAccess: false, user: asUser(pendingTeacher) })
+    expect(JSON.stringify(docs)).not.toContain(SECRET_CONTENT)
 
-    await expect(
-      payload.findByID({
-        collection: 'lessons',
-        id: lesson.id,
-        overrideAccess: false,
-        user: asUser(pendingTeacher),
-      }),
-    ).rejects.toThrow()
+    const one = await payload.findByID({
+      collection: 'lessons',
+      id: lesson.id,
+      overrideAccess: false,
+      user: asUser(pendingTeacher),
+    })
+    expect(JSON.stringify(one)).not.toContain(SECRET_CONTENT)
   })
 
   it('token cấp khi còn active mất quyền đọc ngay khi tài khoản chuyển sang pending', async () => {
@@ -363,19 +375,19 @@ describe('Giáo viên', () => {
     })
 
     const response = await rest(`/lessons/${lesson.id}`, { token })
-    const text = await response.text()
 
-    expect(response.status).toBe(403)
-    expect(text).not.toContain(SECRET_CONTENT)
+    expect(await response.text()).not.toContain(SECRET_CONTENT)
   })
 
-  it('Giáo viên active đọc được bài học', async () => {
+  it('Giáo viên active đọc được nội dung bài học (chính sách riêng, không cần gói)', async () => {
     const token = await loginToken(activeTeacher.email)
 
     const response = await rest(`/lessons/${lesson.id}`, { token })
 
     expect(response.status).toBe(200)
-    expect(((await response.json()) as Lesson).sound).toBe('tr')
+    const text = await response.text()
+    expect((JSON.parse(text) as Lesson).sound).toBe('tr')
+    expect(text).toContain(SECRET_CONTENT)
   })
 
   it('Giáo viên active không sửa được bài học', async () => {

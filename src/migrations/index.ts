@@ -3,6 +3,7 @@ import * as migration_20261007_163617_lessons from './20261007_163617_lessons';
 import * as migration_20261021_174608_worksheets from './20261021_174608_worksheets';
 import * as migration_20261021_180934_worksheet_submissions from './20261021_180934_worksheet_submissions';
 import * as migration_20261023_075749_worksheet_templates from './20261023_075749_worksheet_templates';
+import * as migration_20261030_154543_subscriptions_entitlements from './20261030_154543_subscriptions_entitlements';
 
 export const migrations = [
   {
@@ -28,6 +29,11 @@ export const migrations = [
   {
     up: migration_20261023_075749_worksheet_templates.up,
     down: migration_20261023_075749_worksheet_templates.down,
-    name: '20261023_075749_worksheet_templates'
+    name: '20261023_075749_worksheet_templates',
+  },
+  {
+    up: migration_20261030_154543_subscriptions_entitlements.up,
+    down: migration_20261030_154543_subscriptions_entitlements.down,
+    name: '20261030_154543_subscriptions_entitlements'
   },
 ];

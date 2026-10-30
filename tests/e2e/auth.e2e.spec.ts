@@ -344,10 +344,15 @@ test.describe('Hết phiên khi đang nhập phiếu và thu hồi phiên từ t
     // B vẫn còn cookie nhưng server đã thu hồi phiên
     expect(await me(pageB)).toBeNull()
 
-    // B chuyển trang phía client vào trang được bảo vệ: bị đưa về /login, Header tự sửa (không reload, không polling)
+    // B chuyển trang phía client: trang render theo phiên thực tế (mọi bài bị khóa) và Header tự sửa
+    // (không reload, không polling)
     await header(pageB).getByRole('link', { name: 'Bài học', exact: true }).click()
-    await expect(pageB).toHaveURL(`${BASE_URL}/login`)
+    await expect(pageB).toHaveURL(`${BASE_URL}/bai-hoc`)
     await expectGuestHeader(pageB)
+
+    // Trang được bảo vệ đưa về trang đăng nhập
+    await pageB.goto(`${BASE_URL}/hocsinh/dashboard`)
+    await expect(pageB).toHaveURL(`${BASE_URL}/login/hocsinh`)
 
     await deviceA.close()
     await deviceB.close()

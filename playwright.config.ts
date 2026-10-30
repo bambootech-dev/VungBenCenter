@@ -30,6 +30,14 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      testIgnore: /subscriptions\.e2e\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], channel: 'chromium' },
+    },
+    {
+      // Dùng chung bảng lessons với lessons.e2e (vốn xóa toàn bộ bài khi seed): chạy sau, không song song
+      name: 'subscriptions',
+      dependencies: ['chromium'],
+      testMatch: /subscriptions\.e2e\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], channel: 'chromium' },
     },
   ],
