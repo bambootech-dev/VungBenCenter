@@ -14,12 +14,16 @@ const nextConfig: NextConfig = {
   // Temporarily required on Windows until Next.js fixes Turbopack Sass resolution.
   // See: https://github.com/vercel/next.js/issues/86431
   sassOptions: {
-    loadPaths: ['./node_modules/@payloadcms/ui/dist/scss/'],
+    loadPaths: ['./node_modules/@payloadcms/ui/dist/scss/', './node_modules'],
   },
   images: {
     localPatterns: [
       {
         pathname: '/api/media/file/**',
+      },
+      // Ảnh tĩnh của frontend (carousel trang chủ)
+      {
+        pathname: '/images/**',
       },
     ],
     qualities: [100],

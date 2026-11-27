@@ -4,17 +4,7 @@ import Link from 'next/link'
 import { FormEvent, useState } from 'react'
 
 import { registerAccount } from '@/actions/registerAccount'
-import {
-  cardClass,
-  errorAlertClass,
-  inputClass,
-  labelClass,
-  linkClass,
-  pageTitleClass,
-  pillClass,
-  primaryButtonClass,
-  successAlertClass,
-} from '@/components/ui/brand'
+import { AuthCard } from '@/components/AuthCard'
 
 type Props = {
   role: 'giaovien' | 'hocsinh'
@@ -74,98 +64,87 @@ export function RoleRegister({
   }
 
   return (
-    <main className="flex flex-1 items-center justify-center px-4 py-12 md:py-20">
-      <form className={`${cardClass} w-full max-w-md p-6 sm:p-8`} onSubmit={handleSubmit}>
-        <p className={`${pillClass} mb-3`}>Vững Bền Center</p>
-        <h1 className={`${pageTitleClass} mb-6`}>{title}</h1>
+    <AuthCard onSubmit={handleSubmit} title={title}>
+      <div className="form-floating mb-3">
+        <input
+          autoComplete="name"
+          className="form-control"
+          disabled={loading}
+          id={`${role}-name`}
+          name="name"
+          placeholder="Họ và tên"
+          required
+          type="text"
+        />
+        <label htmlFor={`${role}-name`}>Họ và tên</label>
+      </div>
 
-        <div className="space-y-5">
-          <div>
-            <label className={labelClass} htmlFor={`${role}-name`}>
-              Họ và tên
-            </label>
-            <input
-              autoComplete="name"
-              className={inputClass}
-              disabled={loading}
-              id={`${role}-name`}
-              name="name"
-              required
-              type="text"
-            />
-          </div>
+      <div className="form-floating mb-3">
+        <input
+          autoComplete="email"
+          className="form-control"
+          disabled={loading}
+          id={`${role}-email`}
+          name="email"
+          placeholder="Email"
+          required
+          type="email"
+        />
+        <label htmlFor={`${role}-email`}>Email</label>
+      </div>
 
-          <div>
-            <label className={labelClass} htmlFor={`${role}-email`}>
-              Email
-            </label>
-            <input
-              autoComplete="email"
-              className={inputClass}
-              disabled={loading}
-              id={`${role}-email`}
-              name="email"
-              required
-              type="email"
-            />
-          </div>
+      <div className="form-floating mb-3">
+        <input
+          autoComplete="new-password"
+          className="form-control"
+          disabled={loading}
+          id={`${role}-password`}
+          minLength={8}
+          name="password"
+          placeholder="Mật khẩu"
+          required
+          type="password"
+        />
+        <label htmlFor={`${role}-password`}>Mật khẩu</label>
+      </div>
 
-          <div>
-            <label className={labelClass} htmlFor={`${role}-password`}>
-              Mật khẩu
-            </label>
-            <input
-              autoComplete="new-password"
-              className={inputClass}
-              disabled={loading}
-              id={`${role}-password`}
-              minLength={8}
-              name="password"
-              required
-              type="password"
-            />
-          </div>
+      <div className="form-floating mb-3">
+        <input
+          autoComplete="new-password"
+          className="form-control"
+          disabled={loading}
+          id={`${role}-confirm-password`}
+          minLength={8}
+          name="confirmPassword"
+          placeholder="Nhập lại mật khẩu"
+          required
+          type="password"
+        />
+        <label htmlFor={`${role}-confirm-password`}>Nhập lại mật khẩu</label>
+      </div>
 
-          <div>
-            <label className={labelClass} htmlFor={`${role}-confirm-password`}>
-              Nhập lại mật khẩu
-            </label>
-            <input
-              autoComplete="new-password"
-              className={inputClass}
-              disabled={loading}
-              id={`${role}-confirm-password`}
-              minLength={8}
-              name="confirmPassword"
-              required
-              type="password"
-            />
-          </div>
-
-          {error && (
-            <p className={errorAlertClass} role="alert">
-              {error}
-            </p>
-          )}
-
-          {message && (
-            <p className={successAlertClass} role="status">
-              {message}
-            </p>
-          )}
-
-          <button className={`${primaryButtonClass} w-full`} disabled={loading} type="submit">
-            {loading ? 'Đang tạo tài khoản...' : 'Đăng ký'}
-          </button>
-
-          <p className="text-center font-semibold text-muted-foreground">
-            Đã có tài khoản?{' '}
-            <Link className={linkClass} href={loginTo}>
-              Đăng nhập
-            </Link>
-          </p>
+      {error && (
+        <div className="alert alert-danger d-flex gap-2" role="alert">
+          <i aria-hidden="true" className="bi bi-exclamation-circle-fill" />
+          <span>{error}</span>
         </div>
-      </form>
-    </main>
+      )}
+
+      {message && (
+        <div className="alert alert-success d-flex gap-2" role="status">
+          <i aria-hidden="true" className="bi bi-check-circle-fill" />
+          <span>{message}</span>
+        </div>
+      )}
+
+      <button className="btn btn-primary btn-lg w-100 mt-2" disabled={loading} type="submit">
+        {loading && <span aria-hidden="true" className="spinner-border spinner-border-sm me-2" />}
+        {loading ? 'Đang tạo tài khoản...' : 'Đăng ký'}
+      </button>
+
+      <p className="text-center text-body-secondary mt-4 mb-0">
+        Đã có tài khoản? <Link className="fw-bold" href={loginTo}>Đăng nhập</Link>
+      </p>
+    </AuthCard>
   )
 }

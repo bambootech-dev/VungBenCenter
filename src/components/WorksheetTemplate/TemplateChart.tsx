@@ -7,8 +7,8 @@ type Props = {
   rows: TableRow[]
 }
 
-// Màu cố định (không dùng class Tailwind) để dùng được cả ở frontend lẫn /admin
-const COLORS = { grid: '#c6ebd5', axis: '#4d6b5d', line: '#15803d', point: '#14532d' }
+// Màu cố định (không dùng biến CSS của Bootstrap) để dùng được cả ở frontend lẫn /admin; theo token ở styles/_variables.scss
+const COLORS = { grid: '#dfe3e6', axis: '#575760', line: '#15803d', point: '#14532d' }
 
 /**
  * Lưới tỉ lệ % theo buổi như mẫu giấy: trục dọc theo `chart.step`, trục ngang là các dòng của bảng.

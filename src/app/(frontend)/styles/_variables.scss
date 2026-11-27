@@ -1,0 +1,129 @@
+// Token thiết kế của frontend: ghi đè biến Bootstrap trước khi import Bootstrap.
+// Bảng màu theo ngscience.com (đo ngày 2026-10-26, xem docs/ui-migration.md) nhưng giữ màu chính xanh lá của trung tâm.
+// Mọi cặp chữ/nền dưới đây đạt WCAG AA (≥ 4.5:1) — Bootstrap tự chọn chữ sáng/tối theo $min-contrast-ratio.
+
+// Màu
+$green: #15803d; // màu chính của trung tâm, chữ trắng 5.0:1
+$green-dark: #14532d;
+$blue: #1e73be; // xanh dương link/nút của NG Science, chữ trắng 4.9:1
+$sky: #3396f3; // xanh thương hiệu NG Science: chỉ dùng chữ tối hoặc trang trí
+$amber: #f9a520; // vàng cam NG Science: chỉ dùng với chữ tối (7.9:1)
+$orange: #fe8018;
+$red: #c90620;
+$gray-900: #222222; // --contrast của NG Science
+$gray-700: #575760; // --contrast-2 (chữ phụ, 7.2:1 trên trắng)
+
+$primary: $green;
+$secondary: $blue;
+$success: #2e7d32;
+$info: $sky;
+$warning: $orange;
+$danger: $red;
+$light: #f0f0f0;
+$dark: $gray-900;
+$accent: $amber;
+
+$min-contrast-ratio: 4.5;
+$color-contrast-dark: $gray-900;
+
+// Chữ và nền
+$body-bg: #f7f8f9;
+$body-color: $gray-900;
+$body-secondary-color: $gray-700;
+$headings-color: $green-dark;
+$link-color: $primary;
+$link-decoration: underline;
+$link-underline-offset: 0.2em;
+
+// Viền: ô nhập liệu cần ≥ 3:1 so với nền trắng (WCAG 1.4.11); viền card chỉ trang trí
+$border-color: #dfe3e6;
+$input-border-color: #8a8a93;
+
+// Chữ: Nunito (next/font, biến --font-nunito đặt ở layout) — bo tròn, dễ đọc với trẻ nhỏ, có dấu tiếng Việt
+$font-family-sans-serif: var(--font-nunito), system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+$font-size-base: 1rem;
+$font-weight-base: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+$font-weight-bolder: 800;
+$line-height-base: 1.6;
+$headings-font-weight: 800;
+$headings-line-height: 1.25;
+$lead-font-weight: 600;
+$display-font-weight: 800;
+
+// Hình khối: góc bo như NG Science (5px nút/ô nhập, 10px card) và bóng nhẹ trung tính
+$border-radius: 0.3125rem;
+$border-radius-sm: 0.25rem;
+$border-radius-lg: 0.625rem;
+$border-radius-xl: 1.25rem;
+$box-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.08);
+$box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+$box-shadow-lg: 0 10px 24px rgba(0, 0, 0, 0.12);
+$enable-shadows: false;
+
+// Khung: 1140px như NG Science, 1200px trên màn hình rất rộng
+$container-max-widths: (
+  sm: 540px,
+  md: 720px,
+  lg: 960px,
+  xl: 1140px,
+  xxl: 1200px,
+);
+$aspect-ratios: (
+  '1x1': 100%,
+  '4x3': calc(3 / 4 * 100%),
+  '16x9': calc(9 / 16 * 100%),
+  '16x10': calc(10 / 16 * 100%),
+);
+
+// Nút và ô nhập: vùng bấm ≥ 44px
+$input-btn-padding-y: 0.5rem;
+$input-btn-padding-x: 1.125rem;
+$input-btn-padding-y-lg: 0.75rem;
+$input-btn-padding-x-lg: 1.75rem;
+$btn-font-weight: $font-weight-bold;
+$btn-border-width: 2px;
+$btn-border-radius-lg: 0.5rem;
+$input-border-width: 2px;
+$input-font-weight: $font-weight-semibold;
+$form-label-font-weight: $font-weight-bold;
+$input-placeholder-color: $gray-700;
+// Ô lỗi: viền đỏ + dòng thông báo; bỏ icon trong ô vì ô của bảng phiếu rất hẹp
+$enable-validation-icons: false;
+
+// Viền focus luôn thấy rõ
+$focus-ring-width: 0.25rem;
+$focus-ring-opacity: 0.35;
+
+// Thành phần
+$card-border-color: $border-color;
+$card-border-radius: $border-radius-lg;
+$card-cap-bg: transparent;
+$card-spacer-y: 1.5rem;
+$card-spacer-x: 1.5rem;
+$navbar-padding-y: 0.75rem;
+$navbar-light-color: $gray-900;
+$navbar-light-hover-color: $primary;
+$navbar-light-active-color: $primary;
+$nav-link-font-weight: $font-weight-bold;
+$nav-pills-link-active-bg: $primary;
+$badge-font-weight: $font-weight-bold;
+$badge-padding-y: 0.45em;
+$badge-padding-x: 0.85em;
+$list-group-item-padding-y: 1rem;
+$list-group-item-padding-x: 1.25rem;
+$table-th-font-weight: $font-weight-bolder;
+$table-cell-padding-y: 0.5rem;
+$table-cell-padding-x: 0.5rem;
+$alert-border-width: 2px;
+$progress-height: 0.625rem;
+$progress-border-radius: 50rem;
+
+// Màu nhấn (accent) cho map của theme — thêm vào $theme-colors trong main.scss
+$accent-text-emphasis: shade-color($accent, 60%);
+$accent-bg-subtle: tint-color($accent, 80%);
+$accent-border-subtle: tint-color($accent, 60%);
+$accent-text-emphasis-dark: tint-color($accent, 40%);
+$accent-bg-subtle-dark: shade-color($accent, 80%);
+$accent-border-subtle-dark: shade-color($accent, 40%);

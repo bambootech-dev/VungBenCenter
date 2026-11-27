@@ -4,7 +4,7 @@ Website và hệ thống tài khoản cho trung tâm học Vững Bền.
 
 - **Payload CMS 3** (trang quản trị tại `/admin`) + **Next.js 16** + **React 19**
 - **PostgreSQL** (Supabase hoặc Postgres bất kỳ) qua `@payloadcms/db-postgres`
-- **Tailwind CSS 4**, dùng **npm**
+- **Bootstrap 5.3** (Sass, `src/app/(frontend)/styles`) + Bootstrap Icons, dùng **npm**
 
 ## Chức năng
 

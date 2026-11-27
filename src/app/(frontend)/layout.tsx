@@ -1,28 +1,30 @@
 import type { Metadata } from 'next'
 
-import { cn } from '@/utilities/ui'
-import { GeistMono } from 'geist/font/mono'
-import { GeistSans } from 'geist/font/sans'
 import React from 'react'
 
 import { SiteFooter } from '@/components/SiteFooter'
 import { SiteHeader } from '@/components/SiteHeader'
 import { getServerSideURL } from '@/utilities/getURL'
 
-import { lessonFont } from './bai-hoc/_components/lessonFont'
+import { nunito } from './font'
 
-import './globals.css'
+import 'bootstrap-icons/font/bootstrap-icons.min.css'
+import './styles/main.scss'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html className={cn(GeistSans.variable, GeistMono.variable)} lang="vi">
+    <html className={nunito.variable} data-bs-theme="light" lang="vi">
       <head>
         <link href="/favicon.svg" rel="icon" type="image/svg+xml" />
       </head>
-      {/* Nền xanh nhạt và font Nunito của trang /bai-hoc cho mọi trang */}
-      <body className={cn(lessonFont.className, 'lesson-page')}>
+      <body className="d-flex flex-column min-vh-100">
+        <a className="visually-hidden-focusable btn btn-primary position-absolute top-0 start-0 m-2 z-3" href="#main">
+          Bỏ qua, đến nội dung chính
+        </a>
         <SiteHeader />
-        {children}
+        <main className="d-flex flex-column flex-grow-1" id="main" tabIndex={-1}>
+          {children}
+        </main>
         <SiteFooter />
       </body>
     </html>

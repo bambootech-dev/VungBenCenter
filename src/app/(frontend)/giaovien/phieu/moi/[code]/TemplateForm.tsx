@@ -1,23 +1,12 @@
 'use client'
 
-import { AlertCircle, Loader2, Plus, Send, Trash2 } from 'lucide-react'
+import clsx from 'clsx'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React, { useRef, useState, useTransition } from 'react'
 
 import { submitWorksheet, type SubmitWorksheetResult } from '@/actions/submitWorksheet'
 import { TableHeader } from '@/components/WorksheetTemplate/TableHeader'
-import {
-  cardClass,
-  errorAlertClass,
-  focusRing,
-  inputClass,
-  labelClass,
-  linkClass,
-  primaryButtonClass,
-  secondaryButtonClass,
-} from '@/components/ui/brand'
-import { cn } from '@/utilities/ui'
 import { rowHeader } from '@/worksheetTemplates/snapshot'
 import type { ScalarField, TableColumn, TableField, WorksheetTemplate } from '@/worksheetTemplates/types'
 import { normalizeTemplateValues } from '@/worksheetTemplates/validate'
@@ -47,13 +36,11 @@ const initialTables = (template: WorksheetTemplate) => {
   return tables
 }
 
-const cellClass =
-  'h-10 w-full min-w-0 rounded-lg border-2 border-lesson-border bg-lesson-surface px-2 text-center text-sm font-semibold text-lesson-primary-dark transition focus:border-lesson-primary focus:outline-none focus-visible:ring-4 focus-visible:ring-lesson-primary/25 aria-invalid:border-red-400 aria-invalid:bg-red-50'
-const thClass =
-  'border-2 border-lesson-border bg-lesson-primary-soft px-1.5 py-2 text-center text-xs font-extrabold text-lesson-primary-dark sm:text-sm'
+const thClass = 'bg-primary-subtle text-primary-emphasis text-center small'
 
+// Độ rộng tối thiểu của cột (styles/_custom.scss): ô ghi chú dài rộng, ô số trong nhóm hẹp
 const columnWidth = (column: TableColumn) =>
-  column.maxLength && column.maxLength > 50 ? 'min-w-56' : column.group ? 'min-w-12' : 'min-w-20'
+  column.maxLength && column.maxLength > 50 ? 'cell-w-lg' : column.group ? 'cell-w-xs' : 'cell-w-sm'
 
 const MONTHS = Array.from({ length: 12 }, (_, index) => String(index + 1).padStart(2, '0'))
 
@@ -165,7 +152,7 @@ export const TemplateForm = ({ teacherName, template }: Props) => {
 
   const errorText = (path: string) =>
     errors[path] ? (
-      <p className="mt-1.5 text-sm font-semibold text-red-700" id={`${inputId(path)}-error`}>
+      <p className="invalid-feedback d-block" id={`${inputId(path)}-error`}>
         {errors[path]}
       </p>
     ) : null
@@ -184,10 +171,10 @@ export const TemplateForm = ({ teacherName, template }: Props) => {
         {field.label}
         {field.required && (
           <>
-            <span aria-hidden="true" className="ml-1 text-red-700">
+            <span aria-hidden="true" className="ms-1 text-danger">
               *
             </span>
-            <span className="sr-only"> (bắt buộc)</span>
+            <span className="visually-hidden"> (bắt buộc)</span>
           </>
         )}
       </>
@@ -201,15 +188,16 @@ export const TemplateForm = ({ teacherName, template }: Props) => {
 
       return (
         <fieldset aria-describedby={errors[path] ? `${inputId(path)}-error` : undefined} key={field.key}>
-          <legend className={labelClass}>{label}</legend>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="sr-only" htmlFor={inputId(path)}>
+          <legend className="form-label fs-6">{label}</legend>
+          <div className="row g-2">
+            <label className="visually-hidden" htmlFor={inputId(path)}>
               Tháng
             </label>
+            <div className="col-6">
             <select
               aria-invalid={errors[path] ? true : undefined}
               aria-required={field.required}
-              className={inputClass}
+              className={clsx('form-select', errors[path] && 'is-invalid')}
               id={inputId(path)}
               onChange={(event) => update(year, event.target.value)}
               value={month}
@@ -221,13 +209,15 @@ export const TemplateForm = ({ teacherName, template }: Props) => {
                 </option>
               ))}
             </select>
-            <label className="sr-only" htmlFor={`${inputId(path)}-year`}>
+            </div>
+            <label className="visually-hidden" htmlFor={`${inputId(path)}-year`}>
               Năm
             </label>
+            <div className="col-6">
             <input
               aria-invalid={errors[path] ? true : undefined}
               aria-required={field.required}
-              className={inputClass}
+              className={clsx('form-control', errors[path] && 'is-invalid')}
               id={`${inputId(path)}-year`}
               inputMode="numeric"
               maxLength={4}
@@ -235,6 +225,7 @@ export const TemplateForm = ({ teacherName, template }: Props) => {
               placeholder="Năm"
               value={year}
             />
+            </div>
           </div>
           {errorText(path)}
         </fieldset>
@@ -242,24 +233,25 @@ export const TemplateForm = ({ teacherName, template }: Props) => {
     }
 
     return (
-      <div className={field.type === 'textarea' ? 'sm:col-span-2' : undefined} key={field.key}>
-        <label className={labelClass} htmlFor={inputId(path)}>
+      <div className={field.type === 'textarea' ? 'col-12' : 'col-12 col-sm-6'} key={field.key}>
+        <label className="form-label" htmlFor={inputId(path)}>
           {label}
         </label>
         {field.type === 'textarea' ? (
           <textarea
             {...fieldProps(path)}
             aria-required={field.required}
-            className={cn(inputClass, 'h-auto min-h-32 py-3')}
+            className={clsx('form-control', errors[path] && 'is-invalid')}
             maxLength={field.maxLength}
             onChange={(event) => setScalar(field.key, event.target.value)}
+            rows={4}
             value={value}
           />
         ) : (
           <input
             {...fieldProps(path)}
             aria-required={field.required}
-            className={inputClass}
+            className={clsx('form-control', errors[path] && 'is-invalid')}
             maxLength={field.maxLength}
             onChange={(event) => setScalar(field.key, event.target.value)}
             type={field.type}
@@ -278,11 +270,11 @@ export const TemplateForm = ({ teacherName, template }: Props) => {
     return (
       <div key={field.key}>
         {field.columns.length > 4 && (
-          <p className="mb-2 text-sm font-semibold text-lesson-muted sm:hidden">Vuốt ngang để xem hết các cột của bảng.</p>
+          <p className="small text-body-secondary d-sm-none mb-2">Vuốt ngang để xem hết các cột của bảng.</p>
         )}
-        <div className="overflow-x-auto rounded-2xl border-2 border-lesson-border bg-lesson-surface">
-          <table className="w-full border-collapse" data-testid={`form-table-${field.key}`}>
-            <caption className="sr-only">{field.label}</caption>
+        <div className="table-responsive border rounded">
+          <table className="table table-bordered table-sm align-middle mb-0" data-testid={`form-table-${field.key}`}>
+            <caption className="visually-hidden">{field.label}</caption>
             <TableHeader
               cellClassName={thClass}
               columns={field.columns}
@@ -297,20 +289,20 @@ export const TemplateForm = ({ teacherName, template }: Props) => {
 
                 return (
                   <tr key={rowIndex}>
-                    <th className={cn(thClass, 'whitespace-nowrap')} scope="row">
+                    <th className={clsx(thClass, 'text-nowrap')} scope="row">
                       {field.mode === 'fixed' ? (
                         rowName
                       ) : (
-                        <span className="flex items-center justify-center gap-1">
+                        <span className="d-flex align-items-center justify-content-center gap-1">
                           {rowIndex + 1}
                           {rows.length > 1 && (
                             <button
                               aria-label={`Xoá ${rowName.toLowerCase()}`}
-                              className={cn('rounded-md p-1 text-lesson-muted hover:bg-red-50 hover:text-red-700', focusRing)}
+                              className="btn btn-sm btn-outline-danger border-0 px-2 py-1"
                               onClick={() => removeRow(field, rowIndex)}
                               type="button"
                             >
-                              <Trash2 aria-hidden="true" className="size-4" />
+                              <i aria-hidden="true" className="bi bi-trash3" />
                             </button>
                           )}
                         </span>
@@ -321,12 +313,16 @@ export const TemplateForm = ({ teacherName, template }: Props) => {
                       const columnName = column.group ? `${column.group} ${column.label}` : column.label
 
                       return (
-                        <td className={cn('border-2 border-lesson-border p-1', columnWidth(column))} key={column.key}>
+                        <td className={clsx('p-1', columnWidth(column))} key={column.key}>
                           <input
                             aria-describedby={errors[path] ? `${inputId(path)}-error` : undefined}
                             aria-invalid={errors[path] ? true : undefined}
                             aria-label={`${rowName} – ${columnName}`}
-                            className={cn(cellClass, column.maxLength && column.maxLength > 50 && 'text-left')}
+                            className={clsx(
+                              'form-control form-control-sm',
+                              !(column.maxLength && column.maxLength > 50) && 'text-center',
+                              errors[path] && 'is-invalid',
+                            )}
                             id={inputId(path)}
                             inputMode={column.type === 'integer' ? 'numeric' : undefined}
                             maxLength={column.type === 'integer' ? 3 : column.maxLength}
@@ -344,7 +340,7 @@ export const TemplateForm = ({ teacherName, template }: Props) => {
         </div>
 
         {tableErrors.length > 0 && (
-          <ul className="mt-2 space-y-1 text-sm font-semibold text-red-700">
+          <ul className="list-unstyled small fw-semibold text-danger d-grid gap-1 mt-2 mb-0">
             {tableErrors.map(([path, message]) => {
               const [, , rowIndex, columnKey] = path.split('.')
               const column = field.columns.find((item) => item.key === columnKey)
@@ -364,17 +360,17 @@ export const TemplateForm = ({ teacherName, template }: Props) => {
         )}
 
         {field.mode === 'dynamic' && (
-          <div className="mt-3 flex flex-wrap items-center gap-3">
+          <div className="d-flex flex-wrap align-items-center gap-3 mt-3">
             <button
-              className={secondaryButtonClass}
+              className="btn btn-outline-primary"
               disabled={rows.length >= field.rows}
               onClick={() => addRow(field)}
               type="button"
             >
-              <Plus aria-hidden="true" className="size-5" strokeWidth={2.75} />
+              <i aria-hidden="true" className="bi bi-plus-lg me-1" />
               Thêm dòng
             </button>
-            <p className="text-sm font-semibold text-lesson-muted">
+            <p className="small text-body-secondary mb-0">
               {rows.length}/{field.rows} dòng
             </p>
           </div>
@@ -389,13 +385,13 @@ export const TemplateForm = ({ teacherName, template }: Props) => {
     <form noValidate onSubmit={handleSubmit}>
       <div aria-live="assertive" ref={errorRef} tabIndex={-1}>
         {(formError || errorCount > 0) && (
-          <div className={cn(errorAlertClass, 'mb-6 flex gap-3')} data-testid="worksheet-form-error" role="alert">
-            <AlertCircle aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
+          <div className="alert alert-danger d-flex gap-2 mb-4" data-testid="worksheet-form-error" role="alert">
+            <i aria-hidden="true" className="bi bi-exclamation-circle-fill" />
             <div>
-              <p>{formError?.message ?? `Còn ${errorCount} ô cần kiểm tra lại.`}</p>
+              <p className="mb-0">{formError?.message ?? `Còn ${errorCount} ô cần kiểm tra lại.`}</p>
               {formError?.reason === 'unauthenticated' && (
-                <p className="mt-2">
-                  <Link className={linkClass} href="/login/giaovien" rel="noopener" target="_blank">
+                <p className="mt-2 mb-0">
+                  <Link className="alert-link" href="/login/giaovien" rel="noopener" target="_blank">
                     Đăng nhập lại trong thẻ mới
                   </Link>{' '}
                   — nội dung bạn đã nhập vẫn được giữ ở trang này.
@@ -406,49 +402,52 @@ export const TemplateForm = ({ teacherName, template }: Props) => {
         )}
       </div>
 
-      <div className="space-y-5">
+      <div className="d-grid gap-4">
         {template.sections.map((section) => (
-          <section aria-labelledby={`form-${section.key}`} className={cn(cardClass, 'p-5 sm:p-6')} key={section.key}>
-            <h2 className="text-xl font-extrabold text-lesson-primary-dark" id={`form-${section.key}`}>
-              {section.title}
-            </h2>
-            {section.description && (
-              <p className="mt-1 text-sm font-semibold text-lesson-muted">{section.description}</p>
-            )}
+          <section aria-labelledby={`form-${section.key}`} className="card shadow-sm" key={section.key}>
+            <div className="card-body p-4">
+              <h2 className="h4 mb-1" id={`form-${section.key}`}>
+                {section.title}
+              </h2>
+              {section.description && <p className="small text-body-secondary mb-0">{section.description}</p>}
 
-            <div className="mt-4 grid gap-5 sm:grid-cols-2">
-              {section.accountFields?.map((item) => (
-                <div key={item.label}>
-                  <p className={labelClass}>{item.label}</p>
-                  <p
-                    className="flex h-12 items-center rounded-2xl border-2 border-dashed border-lesson-border bg-lesson-page px-4 text-base font-bold text-lesson-primary-dark"
-                    data-testid="account-field"
-                  >
-                    {teacherName}
-                  </p>
-                </div>
-              ))}
-              {section.fields.map((field) => (field.kind === 'field' ? renderScalar(field) : null))}
+              <div className="row g-3 mt-1">
+                {section.accountFields?.map((item) => (
+                  <div className="col-12 col-sm-6" key={item.label}>
+                    <p className="form-label">{item.label}</p>
+                    <p className="form-control-plaintext fw-bold border rounded bg-body-tertiary px-3" data-testid="account-field">
+                      {teacherName}
+                    </p>
+                  </div>
+                ))}
+                {section.fields.map((field) => (field.kind === 'field' ? renderScalar(field) : null))}
+              </div>
+
+              {section.fields.map((field) =>
+                field.kind === 'table' ? (
+                  <div className="mt-3" key={field.key}>
+                    {renderTable(field)}
+                  </div>
+                ) : null,
+              )}
             </div>
-
-            {section.fields.map((field) => (field.kind === 'table' ? <div className="mt-2" key={field.key}>{renderTable(field)}</div> : null))}
           </section>
         ))}
       </div>
 
-      <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Link className={secondaryButtonClass} href="/giaovien/phieu">
+      <div className="d-flex flex-column-reverse flex-sm-row align-items-sm-center justify-content-sm-between gap-3 mt-5">
+        <Link className="btn btn-outline-primary btn-lg" href="/giaovien/phieu">
           Quay lại
         </Link>
-        <button aria-disabled={isPending} className={primaryButtonClass} disabled={isPending} type="submit">
+        <button aria-disabled={isPending} className="btn btn-primary btn-lg" disabled={isPending} type="submit">
           {isPending ? (
             <>
-              <Loader2 aria-hidden="true" className="size-5 animate-spin" />
+              <span aria-hidden="true" className="spinner-border spinner-border-sm me-2" />
               Đang nộp…
             </>
           ) : (
             <>
-              <Send aria-hidden="true" className="size-5" strokeWidth={2.5} />
+              <i aria-hidden="true" className="bi bi-send-fill me-2" />
               Nộp phiếu
             </>
           )}
